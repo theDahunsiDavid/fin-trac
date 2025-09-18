@@ -107,7 +107,7 @@ The completed application will include the following features:
 
 **Transactions**
 
-```json
+```ts
 {
   id: string;
   date: string;          // ISO 8601
@@ -124,11 +124,11 @@ The completed application will include the following features:
 
 **Categories (preset + user-defined)**
 
-```json
+```ts
 {
   id: string;
-  name: string;          // e.g. "Food", "Transport"
-  color: string;         // Tailwind color class for chart legend
+  name: string; // e.g. "Food", "Transport"
+  color: string; // Tailwind color class for chart legend
 }
 ```
 
@@ -143,4 +143,3 @@ The completed application will include the following features:
     - Instructions for setting up and running the project locally
     - The specific technology stack used
     - Key examples and explanations of how different AI tools were integrated and utilized during the build process
-
