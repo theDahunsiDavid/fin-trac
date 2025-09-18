@@ -100,12 +100,12 @@ The completed application will include the following features:
 
 ## 6. Chosen Technology Stack
 
-**Frontend:** React + Vite
-**Styling:** Tailwind CSS
-**Charts/Visualization:** Recharts
-**Local Database:** IndexedDB via Dexie.js
-**Data Format:** JSON (schema enforced in repos)
-**Deployment Platform:** Vercel
+- **Frontend:** React + Vite
+- **Styling:** Tailwind CSS
+- **Charts/Visualization:** Recharts
+- **Local Database:** IndexedDB via Dexie.js
+- **Data Format:** JSON (schema enforced in repos)
+- **Deployment Platform:** Vercel
 
 <br>
 
