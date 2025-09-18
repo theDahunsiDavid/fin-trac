@@ -1,5 +1,6 @@
 # Project Specification: Finance Tracker (AI-Assisted Development)
 
+<br>
 
 ## 1. Introduction & Project Goal
 
@@ -12,7 +13,7 @@ This project involves building a finance tracker as a capstone project for the A
 The primary goal of building this project is to apply everything I’ve learned about AI-assisted development, schema-aware coding, automated reviews, and in-IDE tooling in the AI for Developers II course by ALX Africa.
 
 I will actively use AI tools for planning, UI generation, code writing, testing, debugging, and deployment as I build this application.
-
+<br>
 
 ## 2. Core Application Features
 
@@ -30,7 +31,7 @@ The completed application will include the following features:
 - **Local-First Storage**
   - All data stored locally in browser using IndexedDB ([Dexie.js](http://dexie.js))
   - JSON-based schema
-
+    <br>
 
 ## 3. User Roles within the Application
 
@@ -38,7 +39,7 @@ The completed application will include the following features:
   - Records personal transactions
   - Views dashboard insights
   - Manages their data locally
-
+    <br>
 
 ## 4. Technical Foundation
 
@@ -66,6 +67,7 @@ The completed application will include the following features:
 - **System Boundary**
   - Frontend only (PWA in browser)
   - Database: IndexedDB via Dexie.js
+    <br>
 
 ## 5. AI Tool Integration During Development
 
@@ -89,3 +91,56 @@ The completed application will include the following features:
 
 - **Schema-aware / API-aware Generation**
   - Use AI to draft Dexie schemas, JSON typing
+    <br>
+
+## 6. Chosen Technology Stack
+
+**Frontend:** React + Vite
+**Styling:** Tailwind CSS
+**Charts/Visualization:** Recharts
+**Local Database:** IndexedDB via Dexie.js
+**Data Format:** JSON (schema enforced in repos)
+**Deployment Platform:** Vercel
+<br>
+
+## 7. Data Model (MVP Draft)
+
+**Transactions**
+
+```json
+{
+  id: string;
+  date: string;          // ISO 8601
+  description: string;
+  amount: number;
+  currency: string;      // e.g. "USD", "NGN" (multi-currency placeholder)
+  type: "credit" | "debit";
+  category: string;
+  tags?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+**Categories (preset + user-defined)**
+
+```json
+{
+  id: string;
+  name: string;          // e.g. "Food", "Transport"
+  color: string;         // Tailwind color class for chart legend
+}
+```
+
+<br>
+
+## 8. Project Outcomes
+
+1.  **Completed Source Code:** A Git repository (e.g., on GitHub) containing the full source code of the finance tracker, with a commit history reflecting the AI-assisted development process.
+2.  **Live Deployed Application:** A working, privacy-friendly, local-first PWA. Users can enter/edit/delete transactions, categorize them, and view visual dashboards.
+3.  **Comprehensive README file:** A detailed README file within the repository explaining:
+    - The project’s purpose and features
+    - Instructions for setting up and running the project locally
+    - The specific technology stack used
+    - Key examples and explanations of how different AI tools were integrated and utilized during the build process
+
