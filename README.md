@@ -1,5 +1,6 @@
 # Project Specification: Finance Tracker (AI-Assisted Development)
 
+
 ## 1. Introduction & Project Goal
 
 This project involves building a finance tracker as a capstone project for the AI for Developers II program. The application is a privacy-friendly, local-first personal finance dashboard that allows users to do the following:
@@ -11,6 +12,7 @@ This project involves building a finance tracker as a capstone project for the A
 The primary goal of building this project is to apply everything I’ve learned about AI-assisted development, schema-aware coding, automated reviews, and in-IDE tooling in the AI for Developers II course by ALX Africa.
 
 I will actively use AI tools for planning, UI generation, code writing, testing, debugging, and deployment as I build this application.
+
 
 ## 2. Core Application Features
 
@@ -29,12 +31,14 @@ The completed application will include the following features:
   - All data stored locally in browser using IndexedDB ([Dexie.js](http://dexie.js))
   - JSON-based schema
 
+
 ## 3. User Roles within the Application
 
 - **Primary User (Individual)**
   - Records personal transactions
   - Views dashboard insights
   - Manages their data locally
+
 
 ## 4. Technical Foundation
 
