@@ -4,13 +4,13 @@
 
 ## 1. Introduction & Project Goal
 
-This project involves building a finance tracker as a capstone project for the AI for Developers II program. The application is a privacy-friendly, local-first personal finance dashboard that allows users to do the following:
+This project involves building a, FinTrac, a finance tracker as a capstone project for the AI for Developers II program. The application is a privacy-friendly, local-first personal finance dashboard that allows users to do the following:
 
 - manually record financial transactions
 - visualize their balances and spending
 - store their financial data locally
 
-The primary goal of building this project is to apply everything I’ve learned about AI-assisted development, schema-aware coding, automated reviews, and in-IDE tooling in the AI for Developers II course by ALX Africa.
+My primary goal of building this project is to apply everything I’ve learned about AI-assisted development, schema-aware coding, automated reviews, and in-IDE tooling in the AI for Developers II course by ALX Africa.
 
 I will actively use AI tools for planning, UI generation, code writing, testing, debugging, and deployment as I build this application.
 
@@ -30,7 +30,7 @@ The completed application will include the following features:
   - Balance summary
   - Interactive charts (Recharts)
 - **Local-First Storage**
-  - All data stored locally in browser using IndexedDB ([Dexie.js](http://dexie.js))
+  - All data stored locally in browser using IndexedDB (Dexie.js)
   - JSON-based schema
 
 <br>
