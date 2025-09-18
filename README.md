@@ -13,6 +13,7 @@ This project involves building a finance tracker as a capstone project for the A
 The primary goal of building this project is to apply everything I’ve learned about AI-assisted development, schema-aware coding, automated reviews, and in-IDE tooling in the AI for Developers II course by ALX Africa.
 
 I will actively use AI tools for planning, UI generation, code writing, testing, debugging, and deployment as I build this application.
+
 <br>
 
 ## 2. Core Application Features
@@ -31,7 +32,8 @@ The completed application will include the following features:
 - **Local-First Storage**
   - All data stored locally in browser using IndexedDB ([Dexie.js](http://dexie.js))
   - JSON-based schema
-    <br>
+
+<br>
 
 ## 3. User Roles within the Application
 
@@ -39,7 +41,8 @@ The completed application will include the following features:
   - Records personal transactions
   - Views dashboard insights
   - Manages their data locally
-    <br>
+
+<br>
 
 ## 4. Technical Foundation
 
@@ -67,7 +70,8 @@ The completed application will include the following features:
 - **System Boundary**
   - Frontend only (PWA in browser)
   - Database: IndexedDB via Dexie.js
-    <br>
+
+<br>
 
 ## 5. AI Tool Integration During Development
 
@@ -91,7 +95,8 @@ The completed application will include the following features:
 
 - **Schema-aware / API-aware Generation**
   - Use AI to draft Dexie schemas, JSON typing
-    <br>
+
+<br>
 
 ## 6. Chosen Technology Stack
 
@@ -101,6 +106,7 @@ The completed application will include the following features:
 **Local Database:** IndexedDB via Dexie.js
 **Data Format:** JSON (schema enforced in repos)
 **Deployment Platform:** Vercel
+
 <br>
 
 ## 7. Data Model (MVP Draft)
