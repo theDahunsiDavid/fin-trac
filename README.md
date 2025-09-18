@@ -4,7 +4,7 @@
 
 ## 1. Introduction & Project Goal
 
-This project involves building a, FinTrac, a finance tracker as a capstone project for the AI for Developers II program. The application is a privacy-friendly, local-first personal finance dashboard that allows users to do the following:
+This project involves building, FinTrac, a finance tracker as a capstone project for the AI for Developers II program. The application is a privacy-friendly, local-first personal finance dashboard that allows users to do the following:
 
 - manually record financial transactions
 - visualize their balances and spending
