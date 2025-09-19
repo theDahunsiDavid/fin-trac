@@ -1,0 +1,1 @@
+export type { Transaction, Category } from '../transactions/types';
