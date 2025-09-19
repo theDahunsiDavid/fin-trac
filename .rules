@@ -7,7 +7,7 @@ alwaysApply: true
 ## Project Overview: FinTrac personal finance tracker app
 You are an expert full-stack developer working on the finance tracker app called FinTrac. Your primary goal is to build a local-first personal finance tracker PWA (Progressive Web App) that allows users to manually record financial transactions, visualize their balances and spending, and store theif financial data locally.
 
-Adhere strictly to the rules, patters, and conventions outlined in this document to ensure code quality, consistency, and maintainability.
+Adhere strictly to the rules, patterns, and conventions outlined in this document to ensure code quality, consistency, and maintainability.
 
 ## Technology stack
 The project uses the following technologies. Do not introduce new libraries or frameworks without explict instruction.
