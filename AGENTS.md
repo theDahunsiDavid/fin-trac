@@ -9,7 +9,7 @@ You are an expert full-stack developer working on the finance tracker app called
 
 Adhere strictly to the rules, patterns, and conventions outlined in this document to ensure code quality, consistency, and maintainability.
 
-## Technology stack
+## Technology Stack
 The project uses the following technologies. Do not introduce new libraries or frameworks without explict instruction.
 
 - Frontend: React + Vite (no Create React App)
@@ -41,7 +41,7 @@ The project uses the following technologies. Do not introduce new libraries or f
   color: string // Tailwind color class for chart legend
 ```
 
-## Security & validation
+## Security & Validation
 - **Input sanitization**: Validate all user inputs before storage
 - **Amount validation**: Prevent negative amounts unless explicitly credit/debit
 - **Date validation**: Ensure valid ISO 8601 dates
@@ -51,18 +51,20 @@ The project uses the following technologies. Do not introduce new libraries or f
 
 ### Directory Structure
 Follow this scalable React App structure:
-  - src/
-    - components/ # Reusable UI components (buttons, forms, charts)
-    - features/ # Feature modules organized by domain
-      - transactions/ # Transaction form, list, detail views
-      - dashboard/ # Charts & summary views
-    - services/ # App services layer
-      - db/ # Dexie setup, schema definitions
-      - repos/ # Data repositories (CRUD operations)
-      - utils/ # Date, currency, number helpers
-    - hooks/ # Custom React hooks (useTransactions, useDashboardData)
-    - App.tsx
-    - main.tsx
+  ```bash
+  src/
+    components/ # Reusable UI components (buttons, forms, charts)
+    features/ # Feature modules organized by domain
+      transactions/ # Transaction form, list, detail views
+      dashboard/ # Charts & summary views
+    services/ # App services layer
+      db/ # Dexie setup, schema definitions
+      repos/ # Data repositories (CRUD operations)
+      utils/ # Date, currency, number helpers
+    hooks/ # Custom React hooks (useTransactions, useDashboardData)
+    App.tsx
+    main.tsx
+  ```
 
 ### Data Flow
 - **Pattern**: UI -> Hooks -> Repositories -> Dexie DB
@@ -84,7 +86,7 @@ Follow this scalable React App structure:
 - **Forms**: Use controlled components with validation
 - **Charts**: Use Recharts with responsive containers
 
-### Database Layer rules
+### Database Layer Rules
 - **All DB operations**: Go through repository layer, never direct Dexie calls in components
 - **Schema changes**: Update in `/services/db/` first
 - **Data validation**: Implement in repositories before Dexie operations
