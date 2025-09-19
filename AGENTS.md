@@ -51,18 +51,18 @@ The project uses the following technologies. Do not introduce new libraries or f
 
 ### Directory Structure
 Follow this scalable React App structure:
-  src/
-    components/ # Reusable UI components (buttons, forms, charts)
-    features/ # Feature modules organized by domain
-      transactions/ # Transaction form, list, detail views
-      dashboard/ # Charts & summary views
-    services/ # App services layer
-      db/ # Dexie setup, schema definitions
-      repos/ # Data repositories (CRUD operations)
-      utils/ # Date, currency, number helpers
-    hooks/ # Custom React hooks (useTransactions, useDashboardData)
-    App.tsx
-    main.tsx
+  - src/
+    - components/ # Reusable UI components (buttons, forms, charts)
+    - features/ # Feature modules organized by domain
+      - transactions/ # Transaction form, list, detail views
+      - dashboard/ # Charts & summary views
+    - services/ # App services layer
+      - db/ # Dexie setup, schema definitions
+      - repos/ # Data repositories (CRUD operations)
+      - utils/ # Date, currency, number helpers
+    - hooks/ # Custom React hooks (useTransactions, useDashboardData)
+    - App.tsx
+    - main.tsx
 
 ### Data Flow
 - **Pattern**: UI -> Hooks -> Repositories -> Dexie DB
