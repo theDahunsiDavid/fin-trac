@@ -1,5 +1,5 @@
-import { db } from '../db/db';
-import type { Transaction } from '../../features/transactions/types';
+import { db } from "../db/db";
+import type { Transaction } from "../../features/transactions/types";
 
 /**
  * Repository class for transaction CRUD operations using IndexedDB.
@@ -57,7 +57,9 @@ export class TransactionRepository {
    * - Called by useTransactions.addTransaction from TransactionForm.
    * - Triggers data refresh, updating DashboardChart with new data points.
    */
-  async create(transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> {
+  async create(
+    transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt">,
+  ): Promise<void> {
     const now = new Date().toISOString();
     await db.transactions.add({
       ...transaction,
@@ -84,7 +86,10 @@ export class TransactionRepository {
    * - Intended for future edit functionality in transaction management.
    * - Would trigger state updates similar to create operations.
    */
-  async update(id: string, updates: Partial<Omit<Transaction, 'id' | 'createdAt'>>): Promise<void> {
+  async update(
+    id: string,
+    updates: Partial<Omit<Transaction, "id" | "createdAt">>,
+  ): Promise<void> {
     const now = new Date().toISOString();
     await db.transactions.update(id, { ...updates, updatedAt: now });
   }
@@ -108,5 +113,101 @@ export class TransactionRepository {
    */
   async delete(id: string): Promise<void> {
     await db.transactions.delete(id);
+  }
+
+  /**
+   * Retrieves transactions within a specific date range.
+   *
+   * This method filters transactions by date, enabling dashboard analytics for specific time periods. It's essential for displaying monthly, weekly, or custom date range reports in the dashboard.
+   *
+   * Assumptions:
+   * - Dates are provided in ISO 8601 format.
+   * - startDate and endDate are valid date strings.
+   *
+   * Edge cases:
+   * - Returns empty array if no transactions exist in the date range.
+   * - Includes transactions on both start and end dates (inclusive range).
+   *
+   * Connections:
+   * - Used by dashboard hooks for filtered analytics.
+   * - Supports time-based chart visualizations.
+   */
+  async getTransactionsByDateRange(
+    startDate: string,
+    endDate: string,
+  ): Promise<Transaction[]> {
+    return await db.transactions
+      .where("date")
+      .between(startDate, endDate, true, true)
+      .toArray();
+  }
+
+  /**
+   * Retrieves transactions filtered by type (credit or debit).
+   *
+   * This method separates income from expenses, enabling focused analysis of transaction types. It's necessary for calculating totals and displaying category-specific insights in the dashboard.
+   *
+   * Assumptions:
+   * - Type parameter is either 'credit' or 'debit'.
+   * - All transactions have a valid type field.
+   *
+   * Edge cases:
+   * - Returns empty array if no transactions of specified type exist.
+   * - Maintains insertion order for consistent UI display.
+   *
+   * Connections:
+   * - Used by useDashboardData for income/expense calculations.
+   * - Supports filtered views and analytics.
+   */
+  async getTransactionsByType(
+    type: "credit" | "debit",
+  ): Promise<Transaction[]> {
+    return await db.transactions.where("type").equals(type).toArray();
+  }
+
+  /**
+   * Retrieves transactions filtered by category.
+   *
+   * This method enables category-specific analysis, supporting spending insights by category. It's useful for understanding spending patterns and budget tracking by category.
+   *
+   * Assumptions:
+   * - Category parameter matches existing transaction categories.
+   * - All transactions have a valid category field.
+   *
+   * Edge cases:
+   * - Returns empty array if no transactions in the specified category exist.
+   * - Case-sensitive category matching.
+   *
+   * Connections:
+   * - Supports future category-based analytics and reports.
+   * - Used for spending breakdown by category visualizations.
+   */
+  async getTransactionsByCategory(category: string): Promise<Transaction[]> {
+    return await db.transactions.where("category").equals(category).toArray();
+  }
+
+  /**
+   * Retrieves recent transactions limited by count.
+   *
+   * This method fetches the most recent transactions for dashboard display. It's essential for showing recent activity without loading the entire transaction history.
+   *
+   * Assumptions:
+   * - Transactions are ordered by date in descending order.
+   * - Limit parameter is a positive number.
+   *
+   * Edge cases:
+   * - Returns all transactions if limit exceeds total count.
+   * - Returns empty array if no transactions exist.
+   *
+   * Connections:
+   * - Used by dashboard for recent activity displays.
+   * - Supports performance optimization for large transaction datasets.
+   */
+  async getRecentTransactions(limit: number = 10): Promise<Transaction[]> {
+    return await db.transactions
+      .orderBy("date")
+      .reverse()
+      .limit(limit)
+      .toArray();
   }
 }

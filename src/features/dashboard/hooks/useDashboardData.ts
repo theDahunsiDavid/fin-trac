@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { useTransactions } from '../../transactions/hooks/useTransactions';
+import { useMemo } from "react";
+import { useTransactions } from "../../transactions/hooks/useTransactions";
 
 /**
  * Custom hook that processes transaction data for dashboard visualization.
@@ -22,12 +22,48 @@ import { useTransactions } from '../../transactions/hooks/useTransactions';
 export const useDashboardData = () => {
   const { transactions } = useTransactions();
 
-  const data = useMemo(() => {
-    return transactions.map(t => ({
-      date: t.date,
-      amount: t.amount
-    }));
+  // Calculate current balance (credits - debits)
+  const balance = useMemo(() => {
+    return transactions.reduce((total, transaction) => {
+      return transaction.type === "credit"
+        ? total + transaction.amount
+        : total - transaction.amount;
+    }, 0);
   }, [transactions]);
 
-  return { data };
+  // Calculate total income (all credit transactions)
+  const totalIncome = useMemo(() => {
+    return transactions
+      .filter((t) => t.type === "credit")
+      .reduce((sum, t) => sum + t.amount, 0);
+  }, [transactions]);
+
+  // Calculate total expenses (all debit transactions)
+  const totalExpenses = useMemo(() => {
+    return transactions
+      .filter((t) => t.type === "debit")
+      .reduce((sum, t) => sum + t.amount, 0);
+  }, [transactions]);
+
+  // Chart data - running balance over time
+  const data = useMemo(() => {
+    let runningBalance = 0;
+    return transactions
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map((t) => {
+        runningBalance += t.type === "credit" ? t.amount : -t.amount;
+        return {
+          date: new Date(t.date).toLocaleDateString(),
+          amount: runningBalance,
+        };
+      });
+  }, [transactions]);
+
+  return {
+    balance,
+    totalIncome,
+    totalExpenses,
+    data,
+    transactionCount: transactions.length,
+  };
 };
