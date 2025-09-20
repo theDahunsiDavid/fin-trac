@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useTransactions } from '../hooks/useTransactions';
+import React, { useState } from "react";
+import { useTransactions } from "../hooks/useTransactions";
 
 /**
  * Renders a form for adding new financial transactions to the FinTrac app.
@@ -21,13 +21,21 @@ import { useTransactions } from '../hooks/useTransactions';
  * - Updates the dashboard and transaction lists immediately after adding a transaction.
  * - Part of the transactions feature module, exported for use in App.tsx.
  */
-export const TransactionForm: React.FC = () => {
+interface TransactionFormProps {
+  onComplete?: () => void;
+  initialType?: "credit" | "debit";
+}
+
+export const TransactionForm: React.FC<TransactionFormProps> = ({
+  onComplete,
+  initialType = "debit",
+}) => {
   const { addTransaction } = useTransactions();
   const [formData, setFormData] = useState({
-    description: '',
-    amount: '',
-    type: 'debit' as 'credit' | 'debit',
-    category: 'Food',
+    description: "",
+    amount: "",
+    type: initialType,
+    category: "Food",
   });
 
   /**
@@ -55,7 +63,7 @@ export const TransactionForm: React.FC = () => {
     await addTransaction({
       description: formData.description,
       amount: parseFloat(formData.amount),
-      currency: 'NGN',
+      currency: "NGN",
       type: formData.type,
       category: formData.category,
       date: new Date().toISOString(),
@@ -63,11 +71,16 @@ export const TransactionForm: React.FC = () => {
 
     // Reset form
     setFormData({
-      description: '',
-      amount: '',
-      type: 'debit',
-      category: 'Food',
+      description: "",
+      amount: "",
+      type: initialType,
+      category: "Food",
     });
+
+    // Call completion callback if provided
+    if (onComplete) {
+      onComplete();
+    }
   };
 
   /**
@@ -87,9 +100,11 @@ export const TransactionForm: React.FC = () => {
    * - Directly updates the local formData state, which is used in rendering and submission.
    * - No external connections; purely internal to the component's state management.
    */
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   return (

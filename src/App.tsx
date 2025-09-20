@@ -1,42 +1,66 @@
-import { TransactionForm } from "./features/transactions";
+import { useState } from "react";
+import { TransactionModal } from "./features/transactions";
 import { DashboardChart } from "./features/dashboard";
 import { Header } from "./components";
 
 /**
  * Main application component for FinTrac.
  *
- * This component serves as the root of the React app, orchestrating the main UI sections for dashboard visualization and transaction entry. It's essential for structuring the app's layout and integrating feature modules.
+ * This component serves as the root of the React app, orchestrating the main UI sections for dashboard visualization and modal-based transaction entry. It manages modal state and integrates feature modules.
  *
  * Assumptions:
- * - Feature components (TransactionForm, DashboardChart) are properly exported.
+ * - Feature components (TransactionModal, DashboardChart) are properly exported.
  * - Tailwind CSS classes are available for styling.
  *
  * Edge cases:
  * - Renders empty sections if components fail to load.
  * - Layout is responsive but assumes standard screen sizes.
+ * - Modal state is managed locally for transaction entry.
  *
  * Connections:
- * - Imports and renders TransactionForm for data input.
+ * - Manages TransactionModal state and passes handlers to Header.
  * - Imports and renders DashboardChart for data visualization.
  * - Mounted by main.tsx as the app's entry point.
  */
 function App() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [transactionType, setTransactionType] = useState<"credit" | "debit">(
+    "debit",
+  );
+
+  const handleInflowClick = () => {
+    setTransactionType("credit");
+    setIsModalOpen(true);
+  };
+
+  const handleSpendClick = () => {
+    setTransactionType("debit");
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+  };
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto">
-        <Header />
+        <Header
+          onInflowClick={handleInflowClick}
+          onSpendClick={handleSpendClick}
+        />
 
         <main className="space-y-8">
           <section>
             <h2 className="text-2xl font-semibold mb-4">Dashboard</h2>
             <DashboardChart />
           </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">Add Transaction</h2>
-            <TransactionForm />
-          </section>
         </main>
+
+        <TransactionModal
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          transactionType={transactionType}
+        />
       </div>
     </div>
   );
