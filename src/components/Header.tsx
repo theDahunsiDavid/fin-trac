@@ -35,18 +35,18 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   return (
     <header className="flex items-center justify-between mb-8">
-      <h1 className="text-3xl font-bold text-gray-600">FinTrac</h1>
+      <h1 className="text-xl font-bold text-gray-620">FinTrac</h1>
 
       <div className="flex gap-3">
         <button
           onClick={onInflowClick}
-          className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors"
+          className="px-4 py-2 bg-emerald-600 text-white text-sm rounded hover:bg-emerald-700 transition-colors"
         >
           Inflow
         </button>
         <button
           onClick={onSpendClick}
-          className="px-4 py-2 bg-rose-400 text-white rounded hover:bg-rose-500 transition-colors"
+          className="px-4 py-2 bg-rose-400 text-white text-sm rounded hover:bg-rose-500 transition-colors"
         >
           Spend
         </button>
