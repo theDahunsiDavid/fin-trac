@@ -1,6 +1,24 @@
 import { TransactionForm } from './features/transactions'
 import { DashboardChart } from './features/dashboard'
 
+/**
+ * Main application component for FinTrac.
+ *
+ * This component serves as the root of the React app, orchestrating the main UI sections for dashboard visualization and transaction entry. It's essential for structuring the app's layout and integrating feature modules.
+ *
+ * Assumptions:
+ * - Feature components (TransactionForm, DashboardChart) are properly exported.
+ * - Tailwind CSS classes are available for styling.
+ *
+ * Edge cases:
+ * - Renders empty sections if components fail to load.
+ * - Layout is responsive but assumes standard screen sizes.
+ *
+ * Connections:
+ * - Imports and renders TransactionForm for data input.
+ * - Imports and renders DashboardChart for data visualization.
+ * - Mounted by main.tsx as the app's entry point.
+ */
 function App() {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
