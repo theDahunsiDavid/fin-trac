@@ -46,7 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
         <button
           onClick={onSpendClick}
-          className="px-4 py-2 bg-rose-400 text-white text-sm rounded hover:bg-rose-500 transition-colors"
+          className="px-4 py-2 bg-emerald-50 text-gray-800 text-sm border border-gray-300 rounded hover:bg-emerald-100 transition-colors"
         >
           Spend
         </button>
