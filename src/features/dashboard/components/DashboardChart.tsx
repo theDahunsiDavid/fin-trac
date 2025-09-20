@@ -1,6 +1,15 @@
-import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useDashboardData } from '../hooks/useDashboardData';
+import React from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+} from "recharts";
+import { useDashboardData } from "../hooks/useDashboardData";
 
 /**
  * Renders a responsive line chart displaying transaction amounts over time.
@@ -22,7 +31,7 @@ import { useDashboardData } from '../hooks/useDashboardData';
  * - Integrated into App.tsx as part of the dashboard section.
  */
 export const DashboardChart: React.FC = () => {
-  const { data } = useDashboardData();
+  const { data, balance } = useDashboardData();
 
   return (
     <ResponsiveContainer width="100%" height={300}>
@@ -30,11 +39,24 @@ export const DashboardChart: React.FC = () => {
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="date" />
         <YAxis
-          tickFormatter={(value) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(value)}
-          ticks={[0, 20000, 40000, 60000, 80000, 100000]}
+          tickFormatter={(value) =>
+            new Intl.NumberFormat("en-NG", {
+              style: "currency",
+              currency: "NGN",
+              signDisplay: "always",
+            }).format(value)
+          }
+          // ticks={[0, 20000, 40000, 60000, 80000, 100000]}
         />
+        // Add reference line at zero
+        <ReferenceLine y={0} stroke="#374151" strokeDasharray="3 3" />
         <Tooltip />
-        <Line type="monotone" dataKey="amount" stroke="#10b981" />
+        <Line
+          type="monotone"
+          dataKey="amount"
+          stroke={balance >= 0 ? "#10b981" : "#ef4444"}
+          strokeWidth={2}
+        />
       </LineChart>
     </ResponsiveContainer>
   );
