@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { TransactionModal } from "./features/transactions";
-import { DashboardChart } from "./features/dashboard";
-import { Header } from "./components";
+import { DashboardChart, useDashboardData } from "./features/dashboard";
+import { Header, SummaryCard } from "./components";
 
 /**
  * Main application component for FinTrac.
@@ -28,6 +28,8 @@ function App() {
     "debit",
   );
 
+  const { balance, totalExpenses } = useDashboardData();
+
   const handleInflowClick = () => {
     setTransactionType("credit");
     setIsModalOpen(true);
@@ -52,6 +54,27 @@ function App() {
         <main className="space-y-8">
           <section>
             <h2 className="text-2xl font-semibold mb-4">Dashboard</h2>
+
+            <div className="flex gap-6 mb-6">
+              <SummaryCard
+                title="Balance"
+                value={balance}
+                description={
+                  balance >= 0
+                    ? `You have ${new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(balance)} available`
+                    : `You have a deficit of ${new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(Math.abs(balance))}`
+                }
+                variant={balance >= 0 ? "positive" : "negative"}
+              />
+
+              <SummaryCard
+                title="Total Expenses"
+                value={totalExpenses}
+                description={`You've spent ${new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(totalExpenses)} so far`}
+                variant="neutral"
+              />
+            </div>
+
             <DashboardChart />
           </section>
         </main>
