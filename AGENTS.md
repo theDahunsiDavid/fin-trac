@@ -15,9 +15,15 @@ The project uses the following technologies. Do not introduce new libraries or f
 - Frontend: React + Vite (no Create React App)
 - Styling: Tailwind CSS only
 - Charts: Recharts library
-- Database: IndexedDB via Dexie.js
+- Database: IndexedDB via PouchDB with CouchDB sync
 - Deployment: Vercel
 - Data Format: JSON with strict typing
+
+## Development Environment
+- **Operating System**: Arch Linux with i3wm
+- **Package Manager**: pacman (use `sudo pacman -S package-name` for system packages)
+- **Node.js Packages**: npm (use `npm install package-name` for Node.js dependencies)
+- **Containerization**: Docker available if needed (`sudo pacman -S docker` to install)
 
 ## Data Schema (Fixed)
 **Transaction Model**:
@@ -58,8 +64,11 @@ Follow this scalable React App structure:
       transactions/ # Transaction form, list, detail views
       dashboard/ # Charts & summary views
     services/ # App services layer
-      db/ # Dexie setup, schema definitions
+      db/ # Current Dexie setup, schema definitions (maintained during migration)
+      pouchdb/ # New PouchDB config, sync setup
       repos/ # Data repositories (CRUD operations)
+        # During migration: both Dexie and PouchDB implementations
+        # Post-migration: only PouchDB implementations
       utils/ # Date, currency, number helpers
     hooks/ # Custom React hooks (useTransactions, useDashboardData)
     App.tsx
@@ -67,9 +76,9 @@ Follow this scalable React App structure:
   ```
 
 ### Data Flow
-- **Pattern**: UI -> Hooks -> Repositories -> Dexie DB
+- **Pattern**: UI -> Hooks -> Repositories -> PouchDB DB
 - **Structure**: Feature-based organization with clear separation of concerns
-- **Storage**: Local-first using IndexedDB via Dexie.js, no backend
+- **Storage**: Local-first using IndexedDB via PouchDB with optional CouchDB sync
 - **System Boundary**: Frontend-only PWA in browser
 
 ### Naming Conventions
@@ -87,9 +96,9 @@ Follow this scalable React App structure:
 - **Charts**: Use Recharts with responsive containers
 
 ### Database Layer Rules
-- **All DB operations**: Go through repository layer, never direct Dexie calls in components
-- **Schema changes**: Update in `/services/db/` first
-- **Data validation**: Implement in repositories before Dexie operations
+- **All DB operations**: Go through repository layer, never direct PouchDB calls in components
+- **Schema changes**: Update in `/services/pouchdb/` first, ensure CouchDB sync compatibility
+- **Data validation**: Implement in repositories before PouchDB operations
 - **Error handling**: Always wrap DB operations in try-catch
 
 ### Feature Module Pattern
