@@ -146,6 +146,10 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         <option value="Food">Food</option>
         <option value="Transport">Transport</option>
         <option value="Entertainment">Entertainment</option>
+        <option value="Software Engineering">Software Engineering</option>
+        <option value="Hygiene">Hygiene</option>
+        <option value="Health">Health</option>
+        <option value="Car Fuel">Car Fuel</option>
         <option value="Other">Other</option>
       </select>
       <button
