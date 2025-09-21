@@ -34,8 +34,8 @@ This document outlines the migration strategy from the current Dexie.js + Indexe
 - [ ] Establish performance baseline with current Dexie implementation
 - [ ] Measure current app load time, transaction add/fetch performance
 - [ ] Test current implementation with larger datasets (1000+ transactions)
-- [ ] Install latest PouchDB dependencies: `npm install pouchdb-browser pouchdb-find @types/pouchdb`
-- [ ] Install PouchDB HTTP adapter: `npm install pouchdb-adapter-http`
+- [ ] Install PouchDB TypeScript definitions only: `npm install @types/pouchdb`
+- [ ] Add PouchDB CDN script to index.html: `<script src="https://cdn.jsdelivr.net/npm/pouchdb@9.0.0/dist/pouchdb.min.js"></script>`
 - [ ] Choose simpler CouchDB setup: either `npm install -g pouchdb-server` for development or basic Docker setup
 - [ ] Use pouchdb-server for initial development: `npx pouchdb-server --port 5984` (no authentication needed initially)
 - [ ] Add Docker setup as optional advanced step: `docker run -d --name couchdb -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=password -p 5984:5984 couchdb:3`
@@ -44,14 +44,14 @@ This document outlines the migration strategy from the current Dexie.js + Indexe
 - [ ] Create backup of current dummy data for validation testing
 
 #### Vite Configuration
-- [ ] Test PouchDB compatibility with Vite's ES modules and build process
-- [ ] Configure Vite for PouchDB browser bundle if needed: add `define: { global: 'globalThis' }` to vite.config.ts
+- [ ] Verify CDN approach works with Vite (no special configuration needed)
 - [ ] Test PouchDB builds correctly with `npm run build` and works in `npm run preview` mode
-- [ ] Verify PouchDB doesn't conflict with existing Tailwind CSS and React plugins
+- [ ] Verify PouchDB CDN doesn't conflict with existing Tailwind CSS and React plugins
+- [ ] Remove any PouchDB packages from Vite optimizeDeps if present
 
 #### Project Structure Updates
 - [ ] Create `src/services/pouchdb/` directory
-- [ ] Create `src/services/pouchdb/config.ts` for PouchDB configuration
+- [ ] Create `src/services/pouchdb/config.ts` for PouchDB configuration using global window.PouchDB
 - [ ] Create `src/services/pouchdb/schema.ts` for document schemas
 - [ ] Update `.gitignore` to exclude local CouchDB data files
 - [ ] Document new directory structure in README
@@ -86,13 +86,13 @@ This document outlines the migration strategy from the current Dexie.js + Indexe
 ### Phase 2: PouchDB Implementation (Estimated: 4-8 days)
 
 #### PouchDB Service Layer
-- [ ] Create `src/services/pouchdb/PouchDBConfig.ts` with database initialization using `pouchdb-browser` preset
+- [ ] Create `src/services/pouchdb/config.ts` with database initialization using global CDN PouchDB (already exists from Phase 1)
 - [ ] Create `src/services/pouchdb/PouchDBConnection.ts` with connection management and IndexedDB adapter setup
 - [ ] Create `src/services/pouchdb/BasePouchRepository.ts` abstract class with common CRUD operations
 - [ ] Implement error handling wrapper for PouchDB operations with proper conflict resolution
 - [ ] Add retry logic for failed database operations and network issues
-- [ ] Configure PouchDB with IndexedDB adapter: `import PouchDB from 'pouchdb-browser'` (includes IndexedDB adapter by default)
-- [ ] Verify IndexedDB adapter compatibility: IndexedDB is included in pouchdb-browser preset
+- [ ] Configure PouchDB using global CDN version: `window.PouchDB` (includes IndexedDB adapter by default)
+- [ ] Verify IndexedDB adapter compatibility: IndexedDB is included in CDN version
 - [ ] Create data validation utilities to compare Dexie vs PouchDB results
 - [ ] Implement data migration utility to transfer existing IndexedDB data to PouchDB format
 - [ ] Add comprehensive logging for PouchDB operations during development
@@ -205,7 +205,7 @@ This document outlines the migration strategy from the current Dexie.js + Indexe
 - [ ] Update `src/features/transactions/hooks/useTransactions.ts` to use PouchDB repository permanently
 - [ ] Remove repository factory and feature flags after successful migration
 - [ ] Update documentation to reflect new PouchDB + CouchDB architecture
-- [ ] Ensure all PouchDB dependencies are latest stable versions: `npm update pouchdb-browser pouchdb-find pouchdb-adapter-http @types/pouchdb`
+- [ ] Ensure CDN script uses latest stable version (currently 9.0.0) and update @types/pouchdb if needed
 
 #### Simple Deployment
 - [ ] Set up basic CouchDB instance for cross-device testing
@@ -271,9 +271,9 @@ This implementation is designed to easily add:
 ## Next Steps
 
 1. Set up local CouchDB development environment (pouchdb-server recommended for simplicity)
-2. Install latest PouchDB dependencies: `npm install pouchdb-browser pouchdb-find pouchdb-adapter-http @types/pouchdb`
-3. Test Vite compatibility with PouchDB browser bundle
+2. Add PouchDB CDN script to index.html and install TypeScript definitions: `npm install @types/pouchdb`
+3. Test CDN approach compatibility with Vite (should work without configuration)
 4. Create PouchDB schema matching existing `Transaction` and `Category` interfaces with `_id` and `_rev` fields
 5. Implement `PouchTransactionRepository` with identical interface to current `TransactionRepository`
-6. Configure PouchDB with IndexedDB adapter using `pouchdb-browser` preset
+6. Configure PouchDB using global window.PouchDB from CDN (includes IndexedDB adapter)
 7. Test CouchDB sync functionality with proper CORS configuration before implementing full sync features

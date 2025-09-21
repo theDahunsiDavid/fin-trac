@@ -14,6 +14,16 @@ My primary goal of building this project is to apply everything I’ve learned a
 
 I will actively use AI tools for planning, UI generation, code writing, testing, debugging, and deployment as I build this application.
 
+## Migration to PouchDB + CouchDB Sync
+
+This project is currently undergoing a migration from Dexie.js to PouchDB + CouchDB for bidirectional synchronization capabilities. The migration is being done in phases:
+
+- **Phase 1 (Foundation & Setup)**: ✅ Completed - PouchDB dependencies installed, local server setup, schema design, and compatibility testing
+- **Phase 2 (PouchDB Implementation)**: In Progress - Implementing PouchDB repositories
+- **Phase 3 (Repository Interface & Migration)**: Planned - Creating abstraction layer and switching implementations
+- **Phase 4 (Sync Implementation)**: Planned - Adding CouchDB sync functionality
+- **Phase 5 (Cleanup & Deployment)**: Planned - Removing Dexie and finalizing deployment
+
 <br>
 
 ## 2. Core Application Features
@@ -48,28 +58,29 @@ The completed application will include the following features:
 
 - **Frontend Structure (React + Vite)**
 
-  ```bash
-  src/
-  ├── components/ # Reusable UI components (buttons, forms, charts)
-  ├── features/ # Feature modules (transactions, dashboard, categories)
-  │ ├── transactions/ # Transaction form, list, detail views
-  │ ├── dashboard/ # Charts & summary views
-  ├── services/ # App services
-  │ ├── db/ # Dexie setup, schema definitions
-  │ ├── repos/ # Data repositories (CRUD, future sync adapter)
-  │ ├── utils/ # Date, currency, number helpers
-  ├── hooks/ # Custom React hooks (useTransactions, useDashboardData)
-  ├── App.tsx
-  └── main.tsx
-  ```
+   ```bash
+   src/
+   ├── components/ # Reusable UI components (buttons, forms, charts)
+   ├── features/ # Feature modules (transactions, dashboard, categories)
+   │ ├── transactions/ # Transaction form, list, detail views
+   │ ├── dashboard/ # Charts & summary views
+   ├── services/ # App services
+   │ ├── db/ # Legacy Dexie setup (to be removed)
+   │ ├── pouchdb/ # PouchDB configuration and schema
+   │ ├── repos/ # Data repositories (CRUD, sync adapter)
+   │ ├── utils/ # Date, currency, number helpers
+   ├── hooks/ # Custom React hooks (useTransactions, useDashboardData)
+   ├── App.tsx
+   └── main.tsx
+   ```
 
 - **Data Flow**
 
-  - UI → Hooks → Repositories → Dexie DB
+  - UI → Hooks → Repositories → PouchDB + CouchDB Sync
 
 - **System Boundary**
   - Frontend only (PWA in browser)
-  - Database: IndexedDB via Dexie.js
+  - Database: IndexedDB via PouchDB with CouchDB bidirectional sync
 
 <br>
 
@@ -103,7 +114,7 @@ The completed application will include the following features:
 - **Frontend:** React + Vite
 - **Styling:** Tailwind CSS
 - **Charts/Visualization:** Recharts
-- **Local Database:** IndexedDB via Dexie.js
+- **Local Database:** IndexedDB via PouchDB + CouchDB sync
 - **Data Format:** JSON (schema enforced in repos)
 - **Deployment Platform:** Vercel
 

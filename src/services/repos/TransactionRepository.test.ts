@@ -22,7 +22,7 @@ vi.mock('../db/db', () => ({
 
 import { db } from '../db/db';
 
-const mockTransactionsTable = db.transactions as any;
+const mockTransactionsTable = db.transactions as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 describe('TransactionRepository', () => {
   let repository: TransactionRepository;
@@ -68,7 +68,7 @@ describe('TransactionRepository', () => {
       };
 
       const mockUUID = '123e4567-e89b-12d3-a456-426614174000';
-      vi.spyOn(crypto, 'randomUUID').mockReturnValue(mockUUID as any);
+      vi.spyOn(crypto, 'randomUUID').mockReturnValue(mockUUID);
       const mockNow = '2023-01-01T12:00:00Z';
       vi.spyOn(Date.prototype, 'toISOString').mockReturnValue(mockNow);
 
