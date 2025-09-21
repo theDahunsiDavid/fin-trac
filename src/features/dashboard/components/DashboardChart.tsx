@@ -61,7 +61,7 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={data}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="date" />
+        <XAxis dataKey="date" tick={{ fontSize: 12 }} />
         <YAxis
           tickFormatter={(value) =>
             new Intl.NumberFormat("en-NG", {
@@ -70,7 +70,7 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
               signDisplay: "always",
             }).format(value)
           }
-          // ticks={[0, 20000, 40000, 60000, 80000, 100000]}
+          tick={{ fontSize: 12 }}
         />
         {/* Add reference line at zero */}
         <ReferenceLine y={0} stroke="#374151" strokeDasharray="3 3" />
