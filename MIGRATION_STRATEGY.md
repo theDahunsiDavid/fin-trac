@@ -16,27 +16,38 @@ This document outlines the migration strategy from the current Dexie.js + Indexe
   - `TransactionForm` receives `addTransaction` prop (no direct hook usage)
   - `DashboardChart` receives `transactions` and `balance` props (no direct hook usage)
   - `App.tsx` is the single source of truth, using `useTransactions` hook
+- **Test Infrastructure**: Vitest + jsdom with test setup in `src/test/setup.ts`
+- **Build System**: Vite with React and Tailwind CSS plugins
 
 ### Current Dependencies
 - `dexie: ^4.2.0`
+- Vite build system with React and Tailwind CSS
+- Vitest testing framework
 - No PouchDB dependencies yet
 
 ## Migration Phases
 
-### Phase 1: Foundation & Setup (Estimated: 3-5 days)
+### Phase 1: Foundation & Setup (Estimated: 1-3 days)
 
 #### Environment Setup
 - [ ] Verify current project structure matches expected layout (src/services/db/, src/services/repos/, etc.)
-- [ ] Install system dependencies on Arch Linux: `sudo pacman -S curl docker` (if using Docker)
-- [ ] Alternative CouchDB setup options: native install `sudo pacman -S couchdb` or pouchdb-server `npm install -g pouchdb-server`
-- [ ] Install latest PouchDB dependencies (`pouchdb-browser@^8.0.1`, `pouchdb-find@^8.0.1`, `@types/pouchdb@^6.4.0`)
-- [ ] Install PouchDB HTTP adapter (`pouchdb-adapter-http@^8.0.1`)
-- [ ] Set up local CouchDB 3.3+ instance for development (Docker recommended: `docker run -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=password -p 5984:5984 couchdb:latest`)
-- [ ] Configure CORS settings on CouchDB for browser access using `add-cors-to-couchdb` tool: `npm install -g add-cors-to-couchdb && add-cors-to-couchdb`
-- [ ] Create development database in CouchDB
-- [ ] Test basic PouchDB connection to local CouchDB instance
+- [ ] Establish performance baseline with current Dexie implementation
+- [ ] Measure current app load time, transaction add/fetch performance
+- [ ] Test current implementation with larger datasets (1000+ transactions)
+- [ ] Install latest PouchDB dependencies: `npm install pouchdb-browser pouchdb-find @types/pouchdb`
+- [ ] Install PouchDB HTTP adapter: `npm install pouchdb-adapter-http`
+- [ ] Choose simpler CouchDB setup: either `npm install -g pouchdb-server` for development or basic Docker setup
+- [ ] Use pouchdb-server for initial development: `npx pouchdb-server --port 5984` (no authentication needed initially)
+- [ ] Add Docker setup as optional advanced step: `docker run -d --name couchdb -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=password -p 5984:5984 couchdb:3`
+- [ ] Test basic PouchDB connection to local server
 - [ ] Test current Dexie implementation works before migration
 - [ ] Create backup of current dummy data for validation testing
+
+#### Vite Configuration
+- [ ] Test PouchDB compatibility with Vite's ES modules and build process
+- [ ] Configure Vite for PouchDB browser bundle if needed: add `define: { global: 'globalThis' }` to vite.config.ts
+- [ ] Test PouchDB builds correctly with `npm run build` and works in `npm run preview` mode
+- [ ] Verify PouchDB doesn't conflict with existing Tailwind CSS and React plugins
 
 #### Project Structure Updates
 - [ ] Create `src/services/pouchdb/` directory
@@ -45,16 +56,34 @@ This document outlines the migration strategy from the current Dexie.js + Indexe
 - [ ] Update `.gitignore` to exclude local CouchDB data files
 - [ ] Document new directory structure in README
 
-#### Schema Design
-- [ ] Convert existing `Transaction` interface to PouchDB document structure (add `_id`, `_rev` fields for CouchDB sync compatibility)
-- [ ] Convert existing `Category` interface to PouchDB document structure (add `_id`, `_rev` fields)
+#### Schema Design & TypeScript
+- [ ] Create TypeScript interfaces that extend current Transaction/Category with PouchDB fields (`_id`, `_rev`)
+- [ ] Ensure PouchDB TypeScript definitions work with current strict TypeScript config
+- [ ] Update existing type exports to maintain backward compatibility during migration
+- [ ] Test TypeScript compilation with new PouchDB interfaces
+- [ ] Decide on document ID strategy: keep current UUID generation or use PouchDB's auto-generated IDs
+- [ ] If keeping UUIDs, ensure PouchDB `_id` field uses current `crypto.randomUUID()` format
+- [ ] Create ID mapping utilities to handle the transition between `id` and `_id` fields
+- [ ] Test document ID uniqueness and conflicts during migration
 - [ ] Create `PouchTransaction` and `PouchCategory` TypeScript interfaces extending base types
 - [ ] Define document ID generation strategy (maintain UUID from current implementation, prefix with doc type: `transaction_${uuid}`, `category_${uuid}`)
 - [ ] Create validation schemas matching current transaction validation
 - [ ] Plan basic document structure with `_id` and `_rev` fields for CouchDB compatibility
-- [ ] Note: Authentication can be added later when multi-user features are needed
 
-### Phase 2: PouchDB Implementation (Estimated: 1 week)
+#### Test Infrastructure Validation
+- [ ] Verify current Vitest + jsdom setup works with PouchDB operations
+- [ ] Test PouchDB operations in jsdom environment (may need polyfills)
+- [ ] Ensure existing test setup.ts configuration remains compatible
+- [ ] Create test database utilities for PouchDB that match current Dexie test patterns
+- [ ] Verify all existing test files still pass before migration: `npm run test`
+
+#### Utility Functions Validation
+- [ ] Verify existing `currencyUtils.ts` and `dateUtils.ts` work with PouchDB data format
+- [ ] Test current ISO 8601 date handling with PouchDB document storage
+- [ ] Ensure current number formatting and currency display logic remains intact
+- [ ] Test existing validation functions with new PouchDB document structure
+
+### Phase 2: PouchDB Implementation (Estimated: 4-8 days)
 
 #### PouchDB Service Layer
 - [ ] Create `src/services/pouchdb/PouchDBConfig.ts` with database initialization using `pouchdb-browser` preset
@@ -62,7 +91,7 @@ This document outlines the migration strategy from the current Dexie.js + Indexe
 - [ ] Create `src/services/pouchdb/BasePouchRepository.ts` abstract class with common CRUD operations
 - [ ] Implement error handling wrapper for PouchDB operations with proper conflict resolution
 - [ ] Add retry logic for failed database operations and network issues
-- [ ] Configure PouchDB with IndexedDB adapter: `import PouchDB from 'pouchdb-browser'` (includes IndexedDB by default)
+- [ ] Configure PouchDB with IndexedDB adapter: `import PouchDB from 'pouchdb-browser'` (includes IndexedDB adapter by default)
 - [ ] Verify IndexedDB adapter compatibility: IndexedDB is included in pouchdb-browser preset
 - [ ] Create data validation utilities to compare Dexie vs PouchDB results
 - [ ] Implement data migration utility to transfer existing IndexedDB data to PouchDB format
@@ -81,12 +110,14 @@ This document outlines the migration strategy from the current Dexie.js + Indexe
 - [ ] Implement `getRecentTransactions()` method matching current signature
 - [ ] Add PouchDB indexing for date, type, and category fields
 
-#### PouchDB Category Repository
+#### PouchDB Category Repository (Future)
+- [ ] Note: `useCategories` is currently a placeholder - implement basic category repository after transaction migration is complete
+- [ ] Focus on transaction migration first, as categories are not actively used in current UI
 - [ ] Create `src/services/repos/PouchCategoryRepository.ts` with same interface as planned `CategoryRepository`
 - [ ] Implement basic CRUD operations for categories
 - [ ] Add validation for category color and name uniqueness
 
-### Phase 3: Repository Interface & Migration (Estimated: 1 week)
+### Phase 3: Repository Interface & Migration (Estimated: 4 days)
 
 #### Repository Abstraction Layer
 - [ ] Create `src/services/repos/ITransactionRepository.ts` interface matching current `TransactionRepository` methods
@@ -97,7 +128,6 @@ This document outlines the migration strategy from the current Dexie.js + Indexe
 
 #### Hook Updates (Minimal Changes Required)
 - [ ] Update `useTransactions` hook to use repository factory instead of direct `TransactionRepository` instantiation
-- [ ] Update `useCategories` hook to use new `ICategoryRepository` when ready
 - [ ] Keep `useDashboardData` unchanged (it only depends on `useTransactions`)
 - [ ] Add loading states for PouchDB operations
 - [ ] Add offline status detection in hooks
@@ -111,7 +141,7 @@ This document outlines the migration strategy from the current Dexie.js + Indexe
 #### Testing & Validation
 - [ ] Create integration tests comparing Dexie vs PouchDB repository outputs
 - [ ] Test all existing CRUD operations work correctly with PouchDB repository
-- [ ] Run existing test suites: `TransactionRepository.test.ts`, `useCategories.test.tsx`, `useDashboardData.test.tsx`, `TransactionForm.test.tsx`, `DashboardChart.test.tsx`
+- [ ] Run existing test suites: `npm run test` to execute all tests including TransactionRepository.test.ts, useCategories.test.tsx, useDashboardData.test.tsx, TransactionForm.test.tsx, DashboardChart.test.tsx
 - [ ] Test error handling and edge cases
 - [ ] Test offline functionality
 - [ ] Implement data consistency validation between old and new repositories
@@ -124,18 +154,28 @@ This document outlines the migration strategy from the current Dexie.js + Indexe
 - [ ] Validate all transaction CRUD operations produce identical results
 - [ ] Test error handling and edge cases with both implementations
 - [ ] Verify UI components work identically with both data sources
+- [ ] Create performance comparison tests between Dexie and PouchDB
+- [ ] Set performance regression thresholds (e.g., no more than 20% slower)
 - [ ] Benchmark performance differences and document findings
 - [ ] Test offline functionality and data persistence
 - [ ] Validate all existing test suites pass with PouchDB repository
+- [ ] Verify PouchDB performance with equivalent data volumes
+- [ ] Test sync performance with realistic data sizes
 
-### Phase 4: Sync Implementation (Estimated: 1 week)
+#### PWA Validation
+- [ ] Test current PWA capabilities work with PouchDB (offline functionality)
+- [ ] Verify service worker compatibility if implemented
+- [ ] Test app installability remains intact after migration
+
+### Phase 4: Sync Implementation (Estimated: 4 days)
 
 #### Basic CouchDB Server Setup
 - [ ] Test CouchDB connection from Arch Linux environment specifically
-- [ ] Set up CouchDB 3.3+ instance using Docker: `docker run -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=password -e COUCHDB_CORS_ENABLE=true -p 5984:5984 couchdb:latest`
-- [ ] Configure CORS for browser access: `[chttpd] enable_cors = true` and `[cors] origins = http://localhost:5173, credentials = true, headers = accept, authorization, content-type, origin, referer, methods = GET,PUT,POST,HEAD,DELETE`
+- [ ] Use chosen setup method (pouchdb-server recommended for simplicity)
+- [ ] If using Docker: `docker run -d --name couchdb -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=password -p 5984:5984 couchdb:3`
+- [ ] Configure CORS in CouchDB: Enable via `[chttpd] enable_cors = true` and set `[cors] origins = http://localhost:5173, credentials = true, methods = GET,PUT,POST,HEAD,DELETE`
 - [ ] Create single development database (no user isolation needed)
-- [ ] Verify CouchDB installation: `curl http://admin:password@localhost:5984` should return `{"couchdb":"Welcome","version":"3.3.x"}`
+- [ ] Verify CouchDB installation: `curl http://admin:password@localhost:5984` should return `{"couchdb":"Welcome","version":"3.x.x"}`
 - [ ] Test CORS functionality from browser environment
 
 #### Sync Implementation
@@ -156,16 +196,16 @@ This document outlines the migration strategy from the current Dexie.js + Indexe
 - [ ] Implement simple "last write wins" conflict resolution for single-user scenario
 - [ ] Document conflict resolution strategy for future multi-user implementation
 
-### Phase 5: Cleanup & Deployment (Estimated: 2-3 days)
+### Phase 5: Cleanup & Deployment (Estimated: 2 days)
 
 #### Data Cleanup
-- [ ] Remove Dexie dependency from `package.json` (`dexie: ^4.2.0`)
+- [ ] Remove Dexie dependency: `npm uninstall dexie`
 - [ ] Remove `src/services/db/db.ts` (FinTracDB class)
 - [ ] Remove original `TransactionRepository.ts` (keep PouchDB version)
 - [ ] Update `src/features/transactions/hooks/useTransactions.ts` to use PouchDB repository permanently
 - [ ] Remove repository factory and feature flags after successful migration
 - [ ] Update documentation to reflect new PouchDB + CouchDB architecture
-- [ ] Ensure all PouchDB dependencies are latest stable versions: `pouchdb-browser@^8.0.1`, `pouchdb-find@^8.0.1`
+- [ ] Ensure all PouchDB dependencies are latest stable versions: `npm update pouchdb-browser pouchdb-find pouchdb-adapter-http @types/pouchdb`
 
 #### Simple Deployment
 - [ ] Set up basic CouchDB instance for cross-device testing
@@ -197,7 +237,7 @@ This document outlines the migration strategy from the current Dexie.js + Indexe
 - [ ] `App.tsx` requires no changes (single source of truth maintained)
 - [ ] `TransactionForm` and `DashboardChart` require no changes (prop-based architecture maintained)
 - [ ] Bidirectional sync working between development devices
-- [ ] No performance degradation compared to Dexie implementation
+- [ ] No performance degradation compared to Dexie implementation (max 20% slower acceptable)
 - [ ] Basic conflict resolution working for single-user cases
 
 ## Current Components That Need No Changes
@@ -208,17 +248,17 @@ This document outlines the migration strategy from the current Dexie.js + Indexe
 
 ## Current Components That Need Minimal Changes
 - `useTransactions.ts` (change repository instantiation to use factory)
-- `useCategories.ts` (implement actual category repository usage)
+- `useCategories.ts` (currently placeholder - defer implementation until after transaction migration)
 
 ## Timeline Summary
 
-- **Total Estimated Duration**: 3-4 weeks
-- **Phase 1 (Foundation)**: Days 1-5
-- **Phase 2 (Implementation)**: Week 2
-- **Phase 3 (Migration)**: Week 3
-- **Phase 3.5 (Verification)**: Days 1-3 of Week 3
-- **Phase 4 (Sync)**: Week 4
-- **Phase 5 (Cleanup)**: Days 1-3 of Week 5
+- **Total Estimated Duration**: 2-3 weeks
+- **Phase 1 (Foundation)**: Days 1-3
+- **Phase 2 (Implementation)**: Days 4-8 (1 week)
+- **Phase 3 (Migration)**: Days 9-12 (4 days)
+- **Phase 3.5 (Verification)**: Days 11-13 (overlapping with Phase 3)
+- **Phase 4 (Sync)**: Days 13-16 (4 days)
+- **Phase 5 (Cleanup)**: Days 17-18 (2 days)
 
 ## Future Extensibility
 
@@ -230,10 +270,10 @@ This implementation is designed to easily add:
 
 ## Next Steps
 
-1. Set up local CouchDB 3.3+ development environment using Docker with CORS enabled
-2. Install latest PouchDB dependencies in `package.json`: `npm install pouchdb-browser@^8.0.1 pouchdb-find@^8.0.1 pouchdb-adapter-http@^8.0.1 @types/pouchdb@^6.4.0`
-3. Create PouchDB schema matching existing `Transaction` and `Category` interfaces with `_id` and `_rev` fields
-4. Implement `PouchTransactionRepository` with identical interface to current `TransactionRepository`
-5. Configure PouchDB with IndexedDB adapter using `pouchdb-browser` preset
-6. Test CouchDB sync functionality with proper CORS configuration before implementing full sync features
-7. Install CORS helper tool: `npm install -g add-cors-to-couchdb`
+1. Set up local CouchDB development environment (pouchdb-server recommended for simplicity)
+2. Install latest PouchDB dependencies: `npm install pouchdb-browser pouchdb-find pouchdb-adapter-http @types/pouchdb`
+3. Test Vite compatibility with PouchDB browser bundle
+4. Create PouchDB schema matching existing `Transaction` and `Category` interfaces with `_id` and `_rev` fields
+5. Implement `PouchTransactionRepository` with identical interface to current `TransactionRepository`
+6. Configure PouchDB with IndexedDB adapter using `pouchdb-browser` preset
+7. Test CouchDB sync functionality with proper CORS configuration before implementing full sync features
