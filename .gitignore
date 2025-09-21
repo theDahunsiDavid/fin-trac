@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# CouchDB data files
+couchdb/
+*.couch
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
