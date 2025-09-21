@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinTrac Phase 3 - Repository Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+            line-height: 1.6;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #2d3748;
+            border-bottom: 2px solid #4299e1;
+            padding-bottom: 10px;
+        }
+        .feature-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background: #f8fafc;
+        }
+        .demo-button {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: background 0.2s;
+        }
+        .demo-button:hover {
+            background: #3182ce;
+        }
+        .demo-button:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+        }
+        .demo-button.secondary {
+            background: #68d391;
+        }
+        .demo-button.secondary:hover {
+            background: #48bb78;
+        }
+        .demo-button.danger {
+            background: #f56565;
+        }
+        .demo-button.danger:hover {
+            background: #e53e3e;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #c6f6d5;
+            color: #276749;
+            border: 1px solid #9ae6b4;
+        }
+        .status.error {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #fbb6ce;
+        }
+        .status.info {
+            background: #bee3f8;
+            color: #2a69ac;
+            border: 1px solid #90cdf4;
+        }
+        .log-output {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        .implementation-selector {
+            margin: 15px 0;
+            padding: 15px;
+            background: #edf2f7;
+            border-radius: 6px;
+        }
+        .implementation-selector label {
+            margin-right: 15px;
+            font-weight: bold;
+        }
+        .implementation-selector select {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            background: white;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4299e1;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #718096;
+            text-transform: uppercase;
+        }
+        .transaction-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .transaction-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid #f7fafc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+        .transaction-description {
+            font-weight: 500;
+        }
+        .transaction-amount {
+            font-weight: bold;
+        }
+        .transaction-amount.credit {
+            color: #38a169;
+        }
+        .transaction-amount.debit {
+            color: #e53e3e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 FinTrac Phase 3 - Repository Implementation Demo</h1>
+
+        <div class="status</h1> info">
+            <strong>Phase 3 Complete!</strong> This demo showcases the repository abstraction layer with support for both Dexie (IndexedDB) and PouchDB implementations.
+        </div>
+
+        <div class="feature-section">
+            <h2>📋 Repository Factory Status</h2>
+            <p>The Repository Factory allows seamless switching between different database implementations without changing application code.</p>
+
+            <div class="implementation-selector">
+                <label for="implementation-select">Current Implementation:</label>
+                <select id="implementation-select">
+                    <option value="dexie">Dexie (IndexedDB)</option>
+                    <option value="pouchdb">PouchDB (with sync capabilities)</option>
+                </select>
+                <button class="demo-button secondary" onclick="switchImplementation()">Switch Implementation</button>
+            </div>
+
+            <div id="status-display" class="status info">
+                Loading repository status...
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="transaction-count">-</div>
+                    <div class="stat-label">Total Transactions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="current-impl">-</div>
+                    <div class="stat-label">Current Implementation</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="last-modified">-</div>
+                    <div class="stat-label">Last Modified</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="db-name">-</div>
+                    <div class="stat-label">Database Name</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-section">
+            <h2>🧪 Repository Operations</h2>
+            <p>Test CRUD operations with the current repository implementation.</p>
+
+            <div>
+                <button class="demo-button" onclick="createSampleTransaction()">Create Sample Transaction</button>
+                <button class="demo-button" onclick="loadAllTransactions()">Load All Transactions</button>
+                <button class="demo-button" onclick="testQueryOperations()">Test Query Operations</button>
+                <button class="demo-button danger" onclick="clearAllTransactions()">Clear All Transactions</button>
+            </div>
+
+            <div id="transaction-display">
+                <h3>Transactions</h3>
+                <div id="transaction-list" class="transaction-list">
+                    <div class="transaction-item">No transactions loaded. Click "Load All Transactions" to see data.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-section">
+            <h2>🔍 Migration Validation</h2>
+            <p>Validate data consistency between Dexie and PouchDB implementations.</p>
+
+            <div>
+                <button class="demo-button" onclick="runMigrationTest()">Run Migration Test</button>
+                <button class="demo-button" onclick="compareImplementations()">Compare Implementations</button>
+                <button class="demo-button" onclick="validateDataIntegrity()">Validate Data Integrity</button>
+            </div>
+
+            <div id="validation-results" class="log-output" style="display: none;">
+                Validation results will appear here...
+            </div>
+        </div>
+
+        <div class="feature-section">
+            <h2>⚡ Performance Benchmarks</h2>
+            <p>Compare performance between Dexie and PouchDB implementations.</p>
+
+            <div>
+                <button class="demo-button" onclick="runPerformanceBenchmark()">Run Performance Test</button>
+                <button class="demo-button secondary" onclick="runStressTest()">Run Stress Test</button>
+            </div>
+
+            <div id="performance-results" class="log-output" style="display: none;">
+                Performance results will appear here...
+            </div>
+        </div>
+
+        <div class="feature-section">
+            <h2>📝 Console Integration</h2></h2>
+            <p>For advanced testing, use the browser console with these commands:</p>
+
+            <div class="log-output">
+// Test repositories directly
+await testRepositories();
+
+// Switch implementations
+RepositoryFactory.setImplementation('pouchdb');
+RepositoryFactory.setImplementation('dexie');
+
+// Get current repository
+const repo = RepositoryFactory.getTransactionRepository();
+
+// Create a transaction
+const transaction = await repo.create({
+    date: '2024-01-15',
+    description: 'Console test',
+    amount: 10.00,
+    currency: 'USD',
+    type: 'debit',
+    category: 'Test'
+});
+
+// Query transactions
+const allTransactions = await repo.getAll();
+const foodTransactions = await repo.getByCategory('Food');
+const debitTransactions = await repo.getByType('debit');
+
+// Compare implementations
+const comparison = await RepositoryFactory.compareImplementations();
+console.log(comparison);
+            </div>
+
+            <div>
+                <button class="demo-button" onclick="openConsoleHelp()">Show Console Commands</button>
+                <button class="demo-button secondary" onclick="exposeAPIs()">Expose APIs to Console</button>
+            </div>
+        </div>
+
+        <div id="log-output" class="log-output">
+            [Demo Loaded] FinTrac Phase 3 Repository Demo ready.
+            [Info] Use the buttons above to test repository functionality.
+            [Info] Check browser console for detailed logs and additional commands.
+        </div>
+    </div>
+
+    <script type="module">
+        // Demo implementation
+        let logOutput = document.getElementById('log-output');
+        let currentRepo = null;
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '[ERROR]' : type === 'success' ? '[SUCCESS]' : '[INFO]';
+            const line = `${timestamp} ${prefix} ${message}\n`;
+            logOutput.textContent += line;
+            logOutput.scrollTop = logOutput.scrollHeight;
+            console.log(line);
+        }
+
+        // Initialize demo
+        async function initDemo() {
+            try {
+                log('Initializing FinTrac Phase 3 Demo...');
+
+                // Check if we can access the main app's modules
+                if (typeof window.RepositoryFactory !== 'undefined') {
+                    log('✅ RepositoryFactory found from main app');
+                    await updateStatus();
+                } else {
+                    log('⚠️ RepositoryFactory not found - demo will use mock data');
+                    showMockStatus();
+                }
+
+                log('✅ Demo initialization complete');
+            } catch (error) {
+                log(`❌ Demo initialization failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function updateStatus() {
+            try {
+                if (!window.RepositoryFactory) {
+                    return;
+                }
+
+                const info = await window.RepositoryFactory.getImplementationInfo();
+
+                document.getElementById('current-impl').textContent = info.current.toUpperCase();
+                document.getElementById('transaction-count').textContent = info.transactionRepository.totalTransactions;
+                document.getElementById('db-name').textContent = info.transactionRepository.name;
+                document.getElementById('last-modified').textContent = info.transactionRepository.lastModified
+                    ? new Date(info.transactionRepository.lastModified).toLocaleDateString()
+                    : 'N/A';
+
+                const statusDiv = document.getElementById('status-display');
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = `<strong>✅ Repository Active:</strong> ${info.current} implementation with ${info.transactionRepository.totalTransactions} transactions`;
+
+                const select = document.getElementById('implementation-select');
+                select.value = info.current;
+            } catch (error) {
+                log(`Failed to update status: ${error.message}`, 'error');
+            }
+        }
+
+        function showMockStatus() {
+            document.getElementById('current-impl').textContent = 'DEMO';
+            document.getElementById('transaction-count').textContent = '0';
+            document.getElementById('db-name').textContent = 'demo-mode';
+            document.getElementById('last-modified').textContent = 'N/A';
+
+            const statusDiv = document.getElementById('status-display');
+            statusDiv.className = 'status error';
+            statusDiv.innerHTML = '<strong>⚠️ Demo Mode:</strong> RepositoryFactory not available. Load the main FinTrac app to test live data.';
+        }
+
+        // Global functions for button handlers
+        window.switchImplementation = async function() {
+            const select = document.getElementById('implementation-select');
+            const newImpl = select.value;
+
+            if (window.RepositoryFactory) {
+                try {
+                    window.RepositoryFactory.setImplementation(newImpl);
+                    log(`✅ Switched to ${newImpl} implementation`, 'success');
+                    await updateStatus();
+                } catch (error) {
+                    log(`❌ Failed to switch implementation: ${error.message}`, 'error');
+                }
+            } else {
+                log('⚠️ Cannot switch - RepositoryFactory not available');
+            }
+        };
+
+        window.createSampleTransaction = async function() {
+            if (!window.RepositoryFactory) {
+                log('⚠️ Cannot create transaction - RepositoryFactory not available');
+                return;
+            }
+
+            try {
+                const repo = window.RepositoryFactory.getTransactionRepository();
+                const sampleTransactions = [
+                    { date: '2024-01-15', description: 'Demo Coffee Shop', amount: 4.50, currency: 'USD', type: 'debit', category: 'Food' },
+                    { date: '2024-01-14', description: 'Demo Salary Payment', amount: 3000.00, currency: 'USD', type: 'credit', category: 'Income' },
+                    { date: '2024-01-13', description: 'Demo Grocery Store', amount: 85.32, currency: 'USD', type: 'debit', category: 'Food' }
+                ];
+
+                const randomTransaction = sampleTransactions[Math.floor(Math.random() * sampleTransactions.length)];
+                randomTransaction.description += ' ' + Date.now(); // Make unique
+
+                const created = await repo.create(randomTransaction);
+                log(`✅ Created transaction: ${created.description} (${created.amount} ${created.currency})`, 'success');
+                await updateStatus();
+            } catch (error) {
+                log(`❌ Failed to create transaction: ${error.message}`, 'error');
+            }
+        };
+
+        window.loadAllTransactions = async function() {
+            if (!window.RepositoryFactory) {
+                log('⚠️ Cannot load transactions - RepositoryFactory not available');
+                return;
+            }
+
+            try {
+                const repo = window.RepositoryFactory.getTransactionRepository();
+                const transactions = await repo.getAll();
+
+                const listDiv = document.getElementById('transaction-list');
+                if (transactions.length === 0) {
+                    listDiv.innerHTML = '<div class="transaction-item">No transactions found.</div>';
+                } else {
+                    listDiv.innerHTML = transactions.map(t => `
+                        <div class="transaction-item">
+                            <div>
+                                <div class="transaction-description">${t.description}</div>
+                                <div style="font-size: 12px; color: #718096;">${t.date} • ${t.category}</div>
+                            </div>
+                            <div class="transaction-amount ${t.type}">${t.type === 'credit' ? '+' : '-'}${t.amount} ${t.currency}</div>
+                        </div>
+                    `).join('');
+                }
+
+                log(`✅ Loaded ${transactions.length} transactions`, 'success');
+            } catch (error) {
+                log(`❌ Failed to load transactions: ${error.message}`, 'error');
+            }
+        };
+
+        window.clearAllTransactions = async function() {
+            if (!window.RepositoryFactory) {
+                log('⚠️ Cannot clear transactions - RepositoryFactory not available');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to clear all transactions? This cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const repo = window.RepositoryFactory.getTransactionRepository();
+                await repo.clear();
+                log('✅ All transactions cleared', 'success');
+                await updateStatus();
+                await window.loadAllTransactions();
+            } catch (error) {
+                log(`❌ Failed to clear transactions: ${error.message}`, 'error');
+            }
+        };
+
+        window.testQueryOperations = async function() {
+            if (!window.RepositoryFactory) {
+                log('⚠️ Cannot test queries - RepositoryFactory not available');
+                return;
+            }
+
+            try {
+                const repo = window.RepositoryFactory.getTransactionRepository();
+
+                // Test different query operations
+                const byCategory = await repo.getByCategory('Food');
+                const byType = await repo.getByType('debit');
+                const searchResults = await repo.searchByDescription('demo');
+
+                log(`✅ Query results: ${byCategory.length} Food transactions, ${byType.length} debit transactions, ${searchResults.length} matching 'demo'`, 'success');
+            } catch (error) {
+                log(`❌ Query test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.compareImplementations = async function() {
+            if (!window.RepositoryFactory) {
+                log('⚠️ Cannot compare implementations - RepositoryFactory not available');
+                return;
+            }
+
+            try {
+                const comparison = await window.RepositoryFactory.compareImplementations();
+
+                const resultsDiv = document.getElementById('validation-results');
+                resultsDiv.style.display = 'block';
+                resultsDiv.textContent = `
+Implementation Comparison Results:
+===================================
+
+Dexie Implementation:
+- Total Transactions: ${comparison.dexie.totalTransactions}
+- Last Modified: ${comparison.dexie.lastModified || 'N/A'}
+
+PouchDB Implementation:
+- Total Transactions: ${comparison.pouchdb.totalTransactions}
+- Last Modified: ${comparison.pouchdb.lastModified || 'N/A'}
+
+Data Identical: ${comparison.identical ? '✅ YES' : '❌ NO'}
+
+Status: ${comparison.identical ? 'Implementations are in sync' : 'Data differences detected - migration may be needed'}
+                `;
+
+                log(`✅ Implementation comparison complete - identical: ${comparison.identical}`, 'success');
+            } catch (error) {
+                log(`❌ Comparison failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.exposeAPIs = function() {
+            if (window.RepositoryFactory) {
+                window.RepositoryFactory = window.RepositoryFactory;
+                window.testRepositories = window.testRepositories;
+                log('✅ APIs exposed to console: RepositoryFactory, testRepositories', 'success');
+                log('Try: RepositoryFactory.getImplementationInfo()', 'info');
+            } else {
+                log('⚠️ No APIs available to expose');
+            }
+        };
+
+        window.openConsoleHelp = function() {
+            log('=== Console Commands Help ===');
+            log('RepositoryFactory.setImplementation("dexie"|"pouchdb")');
+            log('RepositoryFactory.getTransactionRepository()');
+            log('RepositoryFactory.compareImplementations()');
+            log('await testRepositories() // Run full test suite');
+            log('===========================');
+        };
+
+        window.runMigrationTest = function() {
+            log('🚧 Migration test would validate data consistency between implementations');
+            log('This feature requires the full validation utilities to be loaded');
+        };
+
+        window.validateDataIntegrity = function() {
+            log('🚧 Data integrity validation would check for schema compliance and data quality');
+            log('This feature requires the full validation utilities to be loaded');
+        };
+
+        window.runPerformanceBenchmark = function() {
+            document.getElementById('performance-results').style.display = 'block';
+            document.getElementById('performance-results').textContent = `
+Performance Benchmark (Mock Results):
+====================================
+
+Read Operations:
+- Dexie: 2.3ms average
+- PouchDB: 4.1ms average
+- Difference: +78% slower
+
+Write Operations:
+- Dexie: 1.8ms average
+- PouchDB: 3.2ms average
+- Difference: +78% slower
+
+Query Operations:
+- Dexie: 3.1ms average
+- PouchDB: 5.8ms average (with fallback)
+- Difference: +87% slower
+
+Note: PouchDB performance includes indexing overhead but provides sync capabilities.
+            `;
+            log('✅ Mock performance benchmark complete');
+        };
+
+        window.runStressTest = function() {
+            log('🚧 Stress test would create/read/update many transactions to test performance at scale');
+            log('This would help identify performance bottlenecks in both implementations');
+        };
+
+        // Initialize when page loads
+        initDemo();
+    </script>
+</body>
+</html>

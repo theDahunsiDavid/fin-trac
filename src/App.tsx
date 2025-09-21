@@ -3,6 +3,7 @@ import { TransactionModal } from "./features/transactions";
 import { DashboardChart } from "./features/dashboard";
 import { Header, SummaryCard } from "./components";
 import { useTransactions } from "./features/transactions/hooks/useTransactions";
+import type { Transaction } from "./features/transactions/types";
 
 /**
  * Main application component for FinTrac.
@@ -33,7 +34,11 @@ function App() {
   );
 
   // Single source of truth for transaction data
-  const { transactions, loading, addTransaction } = useTransactions();
+  const {
+    transactions,
+    loading,
+    addTransaction: addTransactionHook,
+  } = useTransactions();
 
   // Calculate dashboard data directly from transactions
   const balance = transactions.reduce((total, transaction) => {
@@ -58,6 +63,13 @@ function App() {
 
   const handleModalClose = () => {
     setIsModalOpen(false);
+  };
+
+  // Wrapper function to match TransactionModal's expected interface
+  const addTransaction = async (
+    transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt">,
+  ): Promise<void> => {
+    await addTransactionHook(transaction);
   };
 
   // Show loading state while transactions are being fetched

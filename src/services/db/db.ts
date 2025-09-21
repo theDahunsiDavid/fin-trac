@@ -1,6 +1,6 @@
-import Dexie from 'dexie';
-import type { Table } from 'dexie';
-import type { Transaction, Category } from '../../features/transactions/types';
+import Dexie from "dexie";
+import type { Table } from "dexie";
+import type { Transaction, Category } from "../../features/transactions/types";
 
 /**
  * Extends Dexie to define the IndexedDB schema for FinTrac.
@@ -41,10 +41,10 @@ export class FinTracDB extends Dexie {
    * - Exported db instance is used throughout the app for data access.
    */
   constructor() {
-    super('FinTracDB');
+    super("FinTracDB");
     this.version(1).stores({
-      transactions: 'id, date, type, category',
-      categories: 'id, name'
+      transactions: "id, date, type, category, updatedAt",
+      categories: "id, name",
     });
   }
 }

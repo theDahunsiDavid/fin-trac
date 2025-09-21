@@ -1,92 +1,324 @@
-import { useState, useEffect } from 'react';
-import type { Transaction } from '../types';
-import { TransactionRepository } from '../../../services/repos/TransactionRepository';
-
-const repo = new TransactionRepository();
+import { useState, useEffect, useCallback } from "react";
+import type { Transaction } from "../types";
+import {
+  getTransactionRepository,
+  getImplementation,
+} from "../../../services/repos/RepositoryFactory";
 
 /**
  * Custom hook for managing transaction state and operations in the FinTrac app.
  *
- * This hook is vital for the app's data flow, providing a React-friendly interface to the transaction repository. It handles fetching, caching, and updating transactions locally, ensuring the UI stays in sync with the IndexedDB storage without external API calls.
+ * This hook provides a React-friendly interface to the transaction repository with support
+ * for both Dexie and PouchDB implementations. It handles fetching, caching, and updating
+ * transactions locally, ensuring the UI stays in sync with the chosen storage backend.
  *
- * Assumptions:
- * - TransactionRepository is properly initialized and handles all database interactions.
- * - Component using this hook will handle loading states appropriately.
- *
- * Edge cases:
- * - Handles fetch errors by logging them, preventing app crashes.
- * - Refetches all transactions after adding to ensure consistency.
- * - Loading state prevents premature renders during initial data load.
- *
- * Connections:
- * - Uses TransactionRepository for all CRUD operations.
- * - Provides data to useDashboardData hook for chart visualization.
- * - Used by TransactionForm to add new transactions and update the list.
+ * Features:
+ * - Automatic repository selection based on environment configuration
+ * - Loading states for async operations
+ * - Error handling with user-friendly error states
+ * - Offline status detection
+ * - Enhanced CRUD operations
+ * - Real-time sync status (when using PouchDB)
  */
 export const useTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [operationLoading, setOperationLoading] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [dbImplementation, setDbImplementation] = useState<"dexie" | "pouchdb">(
+    "dexie",
+  );
 
+  // Get repository instance
+  const repo = getTransactionRepository();
+
+  // Track online/offline status
   useEffect(() => {
-    /**
-     * Fetches all transactions from the local database on hook mount.
-     *
-     * This function initializes the transaction list by querying IndexedDB, ensuring the app displays existing data immediately. It's necessary for the local-first architecture, providing offline access to previously stored transactions.
-     *
-     * Assumptions:
-     * - Database is accessible and TransactionRepository.getAll() succeeds.
-     * - Errors are logged but don't prevent the app from functioning.
-     *
-     * Edge cases:
-     * - If fetch fails, transactions remain empty, allowing the app to continue with add operations.
-     * - Loading state is set to false regardless of success/failure to unblock UI.
-     *
-     * Connections:
-     * - Calls TransactionRepository.getAll() to retrieve data.
-     * - Updates the transactions state, which is consumed by components like DashboardChart.
-     */
-    const fetchTransactions = async () => {
-      try {
-        const data = await repo.getAll();
-        setTransactions(data);
-      } catch (error) {
-        console.error('Failed to fetch transactions:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
 
-    fetchTransactions();
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  // Set database implementation on mount
+  useEffect(() => {
+    setDbImplementation(getImplementation());
   }, []);
 
   /**
-   * Adds a new transaction to the database and refreshes the local state.
-   *
-   * This method is essential for user-driven data entry, allowing real-time updates to the transaction list. It ensures data persistence and immediate UI feedback, core to the app's interactive experience.
-   *
-   * Assumptions:
-   * - Transaction data is validated before calling this function.
-   * - Repository handles ID generation and timestamps.
-   *
-   * Edge cases:
-   * - Errors during addition are logged, but state isn't updated if creation fails.
-   * - Refetches all transactions to ensure consistency, even if inefficient for large datasets.
-   *
-   * Connections:
-   * - Calls TransactionRepository.create() to persist data.
-   * - Refetches data to update useDashboardData and other dependent hooks.
-   * - Triggered by TransactionForm submission.
+   * Fetches all transactions from the database
    */
-  const addTransaction = async (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const fetchTransactions = useCallback(async () => {
     try {
-      await repo.create(transaction);
-      // Refresh transactions
+      setError(null);
       const data = await repo.getAll();
       setTransactions(data);
-    } catch (error) {
-      console.error('Failed to add transaction:', error);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to fetch transactions";
+      console.error("Failed to fetch transactions:", err);
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [repo]);
 
-  return { transactions, loading, addTransaction };
+  // Initial data fetch
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
+
+  /**
+   * Adds a new transaction to the database
+   */
+  const addTransaction = useCallback(
+    async (
+      transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt">,
+    ): Promise<Transaction | null> => {
+      try {
+        setOperationLoading(true);
+        setError(null);
+
+        const newTransaction = await repo.create(transaction);
+
+        // Update local state
+        setTransactions((prev) => [newTransaction, ...prev]);
+
+        return newTransaction;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to add transaction";
+        console.error("Failed to add transaction:", err);
+        setError(errorMessage);
+        return null;
+      } finally {
+        setOperationLoading(false);
+      }
+    },
+    [repo],
+  );
+
+  /**
+   * Updates an existing transaction
+   */
+  const updateTransaction = useCallback(
+    async (
+      id: string,
+      updates: Partial<Omit<Transaction, "id" | "createdAt">>,
+    ): Promise<Transaction | null> => {
+      try {
+        setOperationLoading(true);
+        setError(null);
+
+        const updatedTransaction = await repo.update(id, updates);
+
+        // Update local state
+        setTransactions((prev) =>
+          prev.map((t) => (t.id === id ? updatedTransaction : t)),
+        );
+
+        return updatedTransaction;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to update transaction";
+        console.error("Failed to update transaction:", err);
+        setError(errorMessage);
+        return null;
+      } finally {
+        setOperationLoading(false);
+      }
+    },
+    [repo],
+  );
+
+  /**
+   * Deletes a transaction
+   */
+  const deleteTransaction = useCallback(
+    async (id: string): Promise<boolean> => {
+      try {
+        setOperationLoading(true);
+        setError(null);
+
+        await repo.delete(id);
+
+        // Update local state
+        setTransactions((prev) => prev.filter((t) => t.id !== id));
+
+        return true;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to delete transaction";
+        console.error("Failed to delete transaction:", err);
+        setError(errorMessage);
+        return false;
+      } finally {
+        setOperationLoading(false);
+      }
+    },
+    [repo],
+  );
+
+  /**
+   * Gets transactions by date range
+   */
+  const getTransactionsByDateRange = useCallback(
+    async (startDate: string, endDate: string): Promise<Transaction[]> => {
+      try {
+        setError(null);
+        return await repo.getByDateRange(startDate, endDate);
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "Failed to fetch transactions by date range";
+        console.error("Failed to fetch transactions by date range:", err);
+        setError(errorMessage);
+        return [];
+      }
+    },
+    [repo],
+  );
+
+  /**
+   * Gets transactions by category
+   */
+  const getTransactionsByCategory = useCallback(
+    async (category: string): Promise<Transaction[]> => {
+      try {
+        setError(null);
+        return await repo.getByCategory(category);
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "Failed to fetch transactions by category";
+        console.error("Failed to fetch transactions by category:", err);
+        setError(errorMessage);
+        return [];
+      }
+    },
+    [repo],
+  );
+
+  /**
+   * Gets transactions by type
+   */
+  const getTransactionsByType = useCallback(
+    async (type: "credit" | "debit"): Promise<Transaction[]> => {
+      try {
+        setError(null);
+        return await repo.getByType(type);
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "Failed to fetch transactions by type";
+        console.error("Failed to fetch transactions by type:", err);
+        setError(errorMessage);
+        return [];
+      }
+    },
+    [repo],
+  );
+
+  /**
+   * Searches transactions by description
+   */
+  const searchTransactions = useCallback(
+    async (query: string): Promise<Transaction[]> => {
+      try {
+        setError(null);
+        return await repo.searchByDescription(query);
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to search transactions";
+        console.error("Failed to search transactions:", err);
+        setError(errorMessage);
+        return [];
+      }
+    },
+    [repo],
+  );
+
+  /**
+   * Refreshes transactions from the database
+   */
+  const refreshTransactions = useCallback(async () => {
+    setLoading(true);
+    await fetchTransactions();
+  }, [fetchTransactions]);
+
+  /**
+   * Gets database info and status
+   */
+  const getDatabaseInfo = useCallback(async () => {
+    try {
+      return await repo.getInfo();
+    } catch (err) {
+      console.error("Failed to get database info:", err);
+      return null;
+    }
+  }, [repo]);
+
+  /**
+   * Clears all transactions (primarily for testing)
+   */
+  const clearAllTransactions = useCallback(async (): Promise<boolean> => {
+    try {
+      setOperationLoading(true);
+      setError(null);
+
+      await repo.clear();
+      setTransactions([]);
+
+      return true;
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to clear transactions";
+      console.error("Failed to clear transactions:", err);
+      setError(errorMessage);
+      return false;
+    } finally {
+      setOperationLoading(false);
+    }
+  }, [repo]);
+
+  return {
+    // Data
+    transactions,
+
+    // Status
+    loading,
+    operationLoading,
+    error,
+    isOffline,
+    dbImplementation,
+
+    // CRUD Operations
+    addTransaction,
+    updateTransaction,
+    deleteTransaction,
+
+    // Query Operations
+    getTransactionsByDateRange,
+    getTransactionsByCategory,
+    getTransactionsByType,
+    searchTransactions,
+
+    // Utility Operations
+    refreshTransactions,
+    getDatabaseInfo,
+    clearAllTransactions,
+
+    // Error Management
+    clearError: () => setError(null),
+  };
 };
