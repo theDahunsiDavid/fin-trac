@@ -1,25 +1,29 @@
 import { useState } from "react";
 import { TransactionModal } from "./features/transactions";
-import { DashboardChart, useDashboardData } from "./features/dashboard";
+import { DashboardChart } from "./features/dashboard";
 import { Header, SummaryCard } from "./components";
+import { useTransactions } from "./features/transactions/hooks/useTransactions";
 
 /**
  * Main application component for FinTrac.
  *
- * This component serves as the root of the React app, orchestrating the main UI sections for dashboard visualization and modal-based transaction entry. It manages modal state and integrates feature modules.
+ * This component serves as the root of the React app, orchestrating the main UI sections for dashboard visualization and modal-based transaction entry. It manages modal state, integrates feature modules, and serves as the single source of truth for transaction data across all components.
  *
  * Assumptions:
  * - Feature components (TransactionModal, DashboardChart) are properly exported.
  * - Tailwind CSS classes are available for styling.
+ * - useTransactions hook provides transactions data and addTransaction function.
  *
  * Edge cases:
  * - Renders empty sections if components fail to load.
  * - Layout is responsive but assumes standard screen sizes.
  * - Modal state is managed locally for transaction entry.
+ * - Shows loading state while transactions are being fetched.
  *
  * Connections:
  * - Manages TransactionModal state and passes handlers to Header.
- * - Imports and renders DashboardChart for data visualization.
+ * - Imports and renders DashboardChart with transaction data.
+ * - Uses useTransactions hook to maintain single source of truth for data.
  * - Mounted by main.tsx as the app's entry point.
  */
 function App() {
@@ -28,7 +32,19 @@ function App() {
     "debit",
   );
 
-  const { balance, totalExpenses } = useDashboardData();
+  // Single source of truth for transaction data
+  const { transactions, loading, addTransaction } = useTransactions();
+
+  // Calculate dashboard data directly from transactions
+  const balance = transactions.reduce((total, transaction) => {
+    return transaction.type === "credit"
+      ? total + transaction.amount
+      : total - transaction.amount;
+  }, 0);
+
+  const totalExpenses = transactions
+    .filter((t) => t.type === "debit")
+    .reduce((sum, t) => sum + t.amount, 0);
 
   const handleInflowClick = () => {
     setTransactionType("credit");
@@ -43,6 +59,16 @@ function App() {
   const handleModalClose = () => {
     setIsModalOpen(false);
   };
+
+  // Show loading state while transactions are being fetched
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 flex items-center justify-center">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto">
@@ -75,7 +101,7 @@ function App() {
               />
             </div>
 
-            <DashboardChart />
+            <DashboardChart transactions={transactions} balance={balance} />
           </section>
         </main>
 
@@ -83,6 +109,7 @@ function App() {
           isOpen={isModalOpen}
           onClose={handleModalClose}
           transactionType={transactionType}
+          addTransaction={addTransaction}
         />
       </div>
     </div>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   LineChart,
   Line,
@@ -9,29 +9,53 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
-import { useDashboardData } from "../hooks/useDashboardData";
+import type { Transaction } from "../../transactions/types";
+
+interface DashboardChartProps {
+  transactions: Transaction[];
+  balance: number;
+}
 
 /**
  * Renders a responsive line chart displaying transaction amounts over time.
  *
- * This component is key to the app's data visualization capabilities, providing users with visual insights into their financial patterns. It uses Recharts for rendering, ensuring interactive and accessible charts that align with the app's emerald color scheme.
+ * This component is key to the app's data visualization capabilities, providing users with visual insights into their financial patterns. It uses Recharts for rendering, ensuring interactive and accessible charts that align with the app's emerald color scheme. Now receives transaction data as props to maintain single source of truth for data management.
  *
  * Assumptions:
- * - useDashboardData provides an array of objects with date and amount properties.
+ * - transactions prop provides an array of Transaction objects with date and amount properties.
+ * - balance prop provides the current calculated balance for line coloring.
  * - Recharts library is available and configured correctly.
+ * - Parent component manages all data fetching and state updates.
  *
  * Edge cases:
  * - Handles empty data arrays gracefully, showing an empty chart.
  * - Y-axis is formatted as NGN currency, assuming all transactions use this currency.
  * - Responsive container adapts to different screen sizes.
+ * - Chart data is memoized to prevent unnecessary recalculations on re-renders.
  *
  * Connections:
- * - Consumes data from useDashboardData hook.
+ * - Consumes data from parent component props instead of useDashboardData hook.
  * - Displays transaction trends, complementing the TransactionForm for data entry.
- * - Integrated into App.tsx as part of the dashboard section.
+ * - Integrated into App.tsx as part of the dashboard section with prop-based data flow.
+ * - No direct hook dependencies, ensuring clean separation of concerns.
  */
-export const DashboardChart: React.FC = () => {
-  const { data, balance } = useDashboardData();
+export const DashboardChart: React.FC<DashboardChartProps> = ({
+  transactions,
+  balance,
+}) => {
+  // Chart data - running balance over time, memoized for performance
+  const data = useMemo(() => {
+    let runningBalance = 0;
+    return transactions
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map((t) => {
+        runningBalance += t.type === "credit" ? t.amount : -t.amount;
+        return {
+          date: new Date(t.date).toLocaleDateString(),
+          amount: runningBalance,
+        };
+      });
+  }, [transactions]);
 
   return (
     <ResponsiveContainer width="100%" height={300}>
@@ -48,7 +72,7 @@ export const DashboardChart: React.FC = () => {
           }
           // ticks={[0, 20000, 40000, 60000, 80000, 100000]}
         />
-        // Add reference line at zero
+        {/* Add reference line at zero */}
         <ReferenceLine y={0} stroke="#374151" strokeDasharray="3 3" />
         <Tooltip />
         <Line

@@ -1,36 +1,42 @@
 import React, { useState } from "react";
-import { useTransactions } from "../hooks/useTransactions";
+import type { Transaction } from "../types";
 
 /**
  * Renders a form for adding new financial transactions to the FinTrac app.
  *
- * This component is crucial for user input in the local-first finance tracker, allowing users to manually record transactions without external dependencies. It validates inputs and integrates with the transaction management system to ensure data integrity and immediate UI updates.
+ * This component is crucial for user input in the local-first finance tracker, allowing users to manually record transactions without external dependencies. It validates inputs and integrates with the transaction management system to ensure data integrity and immediate UI updates. Now receives addTransaction function as a prop to maintain single source of truth for data.
  *
  * Assumptions:
- * - The useTransactions hook provides an addTransaction function that handles database operations.
+ * - The addTransaction function is provided via props and handles database operations.
  * - Currency is hardcoded to 'NGN' as per current app requirements.
  * - Categories are predefined and match the app's category system.
+ * - Parent component manages transaction data state and updates.
  *
  * Edge cases:
  * - Prevents submission if description or amount is empty.
  * - Resets form after successful submission to allow quick entry of multiple transactions.
  * - Handles form state changes reactively for a smooth user experience.
+ * - Form validation occurs before calling addTransaction prop.
  *
  * Connections:
- * - Uses useTransactions hook to persist data via TransactionRepository.
- * - Updates the dashboard and transaction lists immediately after adding a transaction.
- * - Part of the transactions feature module, exported for use in App.tsx.
+ * - Uses addTransaction prop to persist data via parent component's data management.
+ * - Updates the dashboard and transaction lists immediately after adding a transaction through prop drilling.
+ * - Part of the transactions feature module, used by TransactionModal component.
+ * - No longer directly uses useTransactions hook, ensuring single source of truth.
  */
 interface TransactionFormProps {
   onComplete?: () => void;
   initialType?: "credit" | "debit";
+  addTransaction: (
+    transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt">,
+  ) => Promise<void>;
 }
 
 export const TransactionForm: React.FC<TransactionFormProps> = ({
   onComplete,
   initialType = "debit",
+  addTransaction,
 }) => {
-  const { addTransaction } = useTransactions();
   const [formData, setFormData] = useState({
     description: "",
     amount: "",
@@ -41,20 +47,23 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   /**
    * Handles form submission to add a new transaction.
    *
-   * This function validates the form data, creates a transaction object, and calls the addTransaction hook method. It's necessary to ensure data validation and proper integration with the app's data layer before storing transactions locally.
+   * This function validates the form data, creates a transaction object, and calls the addTransaction prop method. It's necessary to ensure data validation and proper integration with the app's data layer before storing transactions locally. Now uses prop-provided function instead of hook to maintain single source of truth.
    *
    * Assumptions:
    * - Form data is valid and parseable (amount as float).
-   * - addTransaction will handle any database errors and update the UI state.
+   * - addTransaction prop will handle any database errors and update the UI state.
+   * - Parent component manages all transaction state and re-rendering.
    *
    * Edge cases:
    * - Returns early if required fields are missing, preventing invalid submissions.
    * - Uses current date for transaction date, assuming real-time entry.
    * - Resets form state after successful addition for continuous use.
+   * - All data persistence and state updates handled by parent component.
    *
    * Connections:
-   * - Calls useTransactions.addTransaction to persist data.
-   * - Triggers re-fetch of transactions, updating DashboardChart and other components.
+   * - Calls addTransaction prop to persist data through parent component.
+   * - Triggers re-rendering of DashboardChart and other components via parent state updates.
+   * - No direct database or hook interactions, ensuring clean data flow.
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
