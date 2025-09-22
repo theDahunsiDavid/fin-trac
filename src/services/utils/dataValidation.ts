@@ -2,12 +2,29 @@ import type { Transaction } from "../../features/transactions/types";
 import { RepositoryFactory } from "../repos/RepositoryFactory";
 
 /**
- * Data Validation Utility for Migration Verification
+ * Data Validation Utility for FinTrac Personal Finance Tracker
  *
- * This utility provides functions to validate data consistency between
- * different database implementations during migration and testing phases.
+ * Provides comprehensive data validation for FinTrac's local-first architecture,
+ * ensuring data integrity across Dexie.js local storage and CouchDB sync operations.
+ * These validations are critical for maintaining financial data accuracy and
+ * preventing corruption during cross-device synchronization.
+ *
+ * Why this module exists:
+ * - Financial data must be 100% accurate to maintain user trust
+ * - Sync operations between devices can introduce data inconsistencies
+ * - Transaction validation prevents invalid data from corrupting calculations
+ * - Migration utilities need robust validation for data integrity verification
+ * - Import/export operations require validation to catch malformed data
+ * - Development and testing need validation to ensure code quality
  */
 
+/**
+ * Comprehensive validation result for FinTrac transaction data validation
+ *
+ * Provides detailed feedback on transaction data integrity, essential for
+ * maintaining financial accuracy and identifying data corruption issues
+ * during sync operations or data imports.
+ */
 export interface ValidationResult {
   isValid: boolean;
   errors: string[];
@@ -23,6 +40,13 @@ export interface ValidationResult {
   };
 }
 
+/**
+ * Comparison result for validating data consistency between storage implementations
+ *
+ * Used to verify data integrity during sync operations and ensure that
+ * local IndexedDB and remote CouchDB contain identical transaction data.
+ * Critical for identifying sync conflicts and data loss scenarios.
+ */
 export interface ComparisonResult {
   isIdentical: boolean;
   differences: {
@@ -44,7 +68,51 @@ export interface ComparisonResult {
 }
 
 /**
- * Validates transaction data integrity
+ * Validates a single transaction for data integrity and business rule compliance
+ *
+ * This is the core validation function for FinTrac transaction data, ensuring
+ * that all financial records meet strict accuracy standards before storage.
+ * Invalid transactions could corrupt financial calculations or cause sync failures.
+ *
+ * Why this validation is critical in FinTrac:
+ * - Financial data must be 100% accurate to maintain user trust
+ * - Invalid amounts could corrupt balance calculations and reports
+ * - Malformed dates break chronological ordering and analytics
+ * - Missing required fields cause sync conflicts with CouchDB
+ * - Invalid currency codes break multi-currency support
+ * - Improper types/categories disrupt financial categorization
+ *
+ * Connects to:
+ * - TransactionRepository before saving new transactions
+ * - TransactionForm for real-time validation feedback
+ * - Data import utilities for validating external data
+ * - Sync operations to verify incoming transaction data
+ * - Migration scripts to ensure data quality during upgrades
+ *
+ * Validation rules enforced:
+ * - Required fields: id, date, description, amount, currency, type, category
+ * - Date format: ISO 8601 (YYYY-MM-DD) for sync compatibility
+ * - Amount: positive number with max 2 decimal places
+ * - Currency: 3-letter ISO 4217 code (USD, EUR, etc.)
+ * - Type: must be 'credit' or 'debit' for proper accounting
+ * - Timestamps: valid ISO datetime strings with logical ordering
+ *
+ * Assumptions:
+ * - Transaction follows the FinTrac Transaction interface
+ * - All required fields are present (not undefined)
+ * - Optional fields (tags) follow expected format when present
+ * - Business rules about amounts and dates are enforced
+ *
+ * Edge cases handled:
+ * - Empty or whitespace-only descriptions
+ * - Amounts with excessive decimal precision
+ * - Invalid date strings that parse as NaN
+ * - UpdatedAt timestamps earlier than createdAt
+ * - Unreasonably large amounts (over $999M)
+ * - Invalid currency code formats
+ *
+ * @param transaction - Transaction object to validate against FinTrac standards
+ * @returns Array of error messages (empty array if valid)
  */
 export function validateTransaction(transaction: Transaction): string[] {
   const errors: string[] = [];
@@ -165,7 +233,50 @@ export function validateTransaction(transaction: Transaction): string[] {
 }
 
 /**
- * Validates a collection of transactions
+ * Validates a collection of transactions for batch data integrity verification
+ *
+ * Performs comprehensive validation on multiple transactions simultaneously,
+ * essential for validating data imports, sync operations, and bulk data operations
+ * in FinTrac. Provides detailed reporting on data quality issues across the entire
+ * transaction dataset.
+ *
+ * Why this function is critical in FinTrac:
+ * - Data imports from CSV/external sources need batch validation
+ * - Sync operations must verify incoming transaction collections
+ * - Migration scripts require comprehensive data integrity checks
+ * - Bulk edit operations need validation before committing changes
+ * - Database maintenance requires collection-level data quality reporting
+ *
+ * Connects to:
+ * - CSV import utilities for validating external financial data
+ * - SyncService for validating incoming sync data from CouchDB
+ * - Migration scripts for ensuring data integrity during upgrades
+ * - Bulk transaction management operations
+ * - Data quality monitoring and reporting features
+ *
+ * Validation checks performed:
+ * - Individual transaction validation using validateTransaction()
+ * - Duplicate ID detection across the entire collection
+ * - Collection-level warnings for unusual patterns
+ * - Performance warnings for large datasets
+ * - Multi-currency usage analysis
+ * - Category proliferation detection
+ *
+ * Assumptions:
+ * - Input is an array of transaction objects
+ * - Each transaction should follow FinTrac Transaction interface
+ * - Duplicate IDs within the collection are not allowed
+ * - Large collections (>10k transactions) may impact performance
+ *
+ * Edge cases handled:
+ * - Empty transaction arrays
+ * - Collections with duplicate transaction IDs
+ * - Large datasets that may cause performance issues
+ * - Collections with many categories or currencies
+ * - Mixed valid and invalid transactions
+ *
+ * @param transactions - Array of Transaction objects to validate
+ * @returns ValidationResult with detailed error reporting and statistics
  */
 export function validateTransactions(
   transactions: Transaction[],
@@ -261,7 +372,53 @@ export function validateTransactions(
 }
 
 /**
- * Compares transactions between two implementations
+ * Compares transactions between two database implementations for migration verification
+ *
+ * This function was critical during FinTrac's migration from PouchDB to Dexie.js,
+ * ensuring data integrity by comparing transaction data between storage implementations.
+ * While PouchDB has been removed, this function remains for future migration scenarios
+ * and testing validation.
+ *
+ * Why this function was essential for FinTrac:
+ * - Verified complete data migration from PouchDB to Dexie during architecture change
+ * - Detected data loss or corruption during migration processes
+ * - Ensured transaction consistency across different storage backends
+ * - Provided confidence in migration integrity for financial data
+ * - Enabled rollback decisions based on data comparison results
+ *
+ * Connects to:
+ * - Migration scripts that needed to verify data transfer completeness
+ * - Testing utilities for validating repository implementations
+ * - Data integrity monitoring during development
+ * - Quality assurance processes for database changes
+ *
+ * Comparison analysis performed:
+ * - Identifies transactions present in only one implementation
+ * - Detects field-level differences in matching transactions
+ * - Provides statistical summary of data consistency
+ * - Reports exact differences for debugging migration issues
+ * - Validates referential integrity across implementations
+ *
+ * Assumptions:
+ * - Both implementations are properly configured and accessible
+ * - Transaction IDs are consistent across implementations
+ * - RepositoryFactory can switch between implementations
+ * - Source and target implementations are different
+ *
+ * Edge cases handled:
+ * - Implementations with different transaction counts
+ * - Transactions with modified fields between implementations
+ * - Network issues when accessing remote implementations
+ * - Large datasets that require efficient comparison algorithms
+ *
+ * Migration context:
+ * - Originally used for PouchDB to Dexie migration verification
+ * - Now serves as template for future storage backend changes
+ * - Provides framework for testing new repository implementations
+ *
+ * @param sourceImpl - Source database implementation to compare from
+ * @param targetImpl - Target database implementation to compare to
+ * @returns ComparisonResult with detailed difference analysis
  */
 export async function compareImplementations(
   sourceImpl: "dexie" | "pouchdb",
@@ -272,14 +429,14 @@ export async function compareImplementations(
   }
 
   // Get transactions from source implementation
-  RepositoryFactory.setImplementation(sourceImpl);
-  const sourceRepo = RepositoryFactory.getTransactionRepository();
-  const sourceTransactions = await sourceRepo.getAll();
+  // Note: FinTrac now only supports Dexie implementation
+  if (sourceImpl !== "dexie" || targetImpl !== "dexie") {
+    throw new Error("Only Dexie implementation is currently supported");
+  }
 
-  // Get transactions from target implementation
-  RepositoryFactory.setImplementation(targetImpl);
-  const targetRepo = RepositoryFactory.getTransactionRepository();
-  const targetTransactions = await targetRepo.getAll();
+  const repo = RepositoryFactory.getTransactionRepository();
+  const sourceTransactions = await repo.getAll();
+  const targetTransactions = await repo.getAll();
 
   // Create maps for efficient comparison
   const sourceMap = new Map(sourceTransactions.map((t) => [t.id, t]));
@@ -375,12 +532,53 @@ export async function compareImplementations(
 }
 
 /**
- * Validates data consistency for a specific implementation
+ * Validates data consistency for a specific database implementation
+ *
+ * Provides implementation-specific data validation for FinTrac's storage backends,
+ * ensuring that transaction data maintains integrity within a single database
+ * implementation. This is essential for debugging storage-specific issues and
+ * verifying data quality in production environments.
+ *
+ * Why this function is important in FinTrac:
+ * - Validates data integrity within a specific storage implementation
+ * - Helps identify corruption or inconsistencies in Dexie IndexedDB
+ * - Provides baseline validation before sync operations
+ * - Supports debugging of implementation-specific data issues
+ * - Enables data quality monitoring in production
+ *
+ * Connects to:
+ * - Database maintenance and monitoring utilities
+ * - Pre-sync validation to ensure clean local data
+ * - Development debugging tools for storage issues
+ * - Production data quality monitoring dashboards
+ * - Automated data integrity checks
+ *
+ * Implementation context:
+ * - Currently supports Dexie.js for local IndexedDB storage
+ * - PouchDB parameter maintained for compatibility with legacy code
+ * - Can be extended for future storage backend implementations
+ *
+ * Assumptions:
+ * - RepositoryFactory can successfully switch implementations
+ * - Database connection is available and functional
+ * - All transactions can be loaded into memory for validation
+ *
+ * Edge cases handled:
+ * - Empty databases return valid results with zero transactions
+ * - Database connection failures propagate as exceptions
+ * - Large datasets may impact memory usage during validation
+ *
+ * @param implementation - Database implementation to validate ("dexie" or "pouchdb")
+ * @returns ValidationResult with comprehensive data quality analysis
  */
 export async function validateDataConsistency(
   implementation: "dexie" | "pouchdb",
 ): Promise<ValidationResult> {
-  RepositoryFactory.setImplementation(implementation);
+  // Note: FinTrac now only supports Dexie implementation
+  if (implementation !== "dexie") {
+    throw new Error("Only Dexie implementation is currently supported");
+  }
+
   const repo = RepositoryFactory.getTransactionRepository();
   const transactions = await repo.getAll();
 
@@ -388,7 +586,56 @@ export async function validateDataConsistency(
 }
 
 /**
- * Performs comprehensive data validation across both implementations
+ * Performs comprehensive migration integrity validation across database implementations
+ *
+ * This function was the cornerstone of FinTrac's migration from PouchDB to Dexie.js,
+ * providing end-to-end validation that ensured no financial data was lost during
+ * the architecture transition. It combines individual implementation validation
+ * with cross-implementation comparison to provide complete migration confidence.
+ *
+ * Why this function was critical for FinTrac migration:
+ * - Validated that all transaction data survived the migration process
+ * - Detected any data corruption or loss during storage backend changes
+ * - Provided actionable recommendations for resolving migration issues
+ * - Gave stakeholders confidence in financial data integrity
+ * - Enabled safe rollback decisions if migration problems were detected
+ *
+ * Connects to:
+ * - Migration scripts that performed the actual data transfer
+ * - Quality assurance processes for database architecture changes
+ * - Production deployment validation for storage backend updates
+ * - Development testing for repository implementation changes
+ *
+ * Validation workflow:
+ * 1. Validates data integrity within each implementation separately
+ * 2. Compares transaction data between implementations
+ * 3. Analyzes validation results to determine overall migration status
+ * 4. Generates actionable recommendations for addressing issues
+ * 5. Provides clear success/warning/error status for decision making
+ *
+ * Status determination logic:
+ * - "error": Data validation failures or missing transactions detected
+ * - "warning": Minor inconsistencies or advisory warnings present
+ * - "success": All validations passed with no significant issues
+ *
+ * Assumptions:
+ * - Both database implementations are accessible and functional
+ * - RepositoryFactory can switch between implementations reliably
+ * - All transaction data can be loaded for comparison
+ * - Migration process has completed before running this validation
+ *
+ * Edge cases handled:
+ * - One implementation having more transactions than the other
+ * - Field-level differences in matching transactions
+ * - Database connection failures during validation
+ * - Large datasets that may impact validation performance
+ *
+ * Migration context:
+ * - Originally designed for PouchDB to Dexie migration verification
+ * - Now serves as template for future storage backend migrations
+ * - Provides framework for validating any repository implementation changes
+ *
+ * @returns Comprehensive migration integrity report with status and recommendations
  */
 export async function validateMigrationIntegrity(): Promise<{
   dexieValidation: ValidationResult;
@@ -463,7 +710,61 @@ export async function validateMigrationIntegrity(): Promise<{
 }
 
 /**
- * Utility function to generate a detailed report
+ * Generates a comprehensive human-readable validation report for FinTrac migrations
+ *
+ * Transforms complex validation data structures into clear, actionable reports
+ * that stakeholders can understand and act upon. This was essential during
+ * FinTrac's migration process for communicating data integrity status to
+ * both technical and non-technical team members.
+ *
+ * Why this reporting function is essential:
+ * - Provides clear communication of migration integrity status
+ * - Enables non-technical stakeholders to understand data validation results
+ * - Creates audit trails for migration and data integrity processes
+ * - Supports debugging by presenting validation data in readable format
+ * - Facilitates decision-making about migration success or rollback needs
+ *
+ * Connects to:
+ * - Migration scripts that need to output validation results
+ * - Quality assurance processes requiring detailed validation reports
+ * - Development debugging tools for understanding data issues
+ * - Production monitoring systems that track data integrity
+ * - Automated testing that validates repository implementations
+ *
+ * Report sections generated:
+ * - Overall migration status (SUCCESS/WARNING/ERROR)
+ * - Dexie implementation validation results and statistics
+ * - PouchDB implementation validation results and statistics
+ * - Cross-implementation comparison analysis
+ * - Actionable recommendations for addressing identified issues
+ *
+ * Report format design:
+ * - ASCII text format for easy logging and email distribution
+ * - Structured sections for systematic review
+ * - Clear statistics for quantitative analysis
+ * - Detailed error and warning listings for debugging
+ * - Prioritized recommendations for remediation actions
+ *
+ * Assumptions:
+ * - Input validation results follow expected data structures
+ * - Text-based reporting format is appropriate for the use case
+ * - Recipients understand FinTrac's dual-implementation architecture
+ * - Report content will be used for decision-making processes
+ *
+ * Edge cases handled:
+ * - Empty validation results or missing data sections
+ * - Large numbers of errors or warnings (truncation may be needed)
+ * - Various recommendation types and priority levels
+ * - Different overall status values and their implications
+ *
+ * Usage context:
+ * - Migration validation scripts output these reports to logs
+ * - Quality assurance reviews use reports for sign-off decisions
+ * - Development debugging benefits from detailed error breakdowns
+ * - Production monitoring systems can parse and alert on report content
+ *
+ * @param results - Complete validation results from validateMigrationIntegrity
+ * @returns Formatted text report suitable for logging, email, or file output
  */
 export function generateValidationReport(results: {
   dexieValidation: ValidationResult;

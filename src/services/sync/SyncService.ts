@@ -1,21 +1,46 @@
 /**
- * Sync Service for FinTrac
+ * Sync Service for FinTrac Cross-Device Financial Data Synchronization
  *
- * Provides bidirectional synchronization between local Dexie database and CouchDB.
- * This service handles the orchestration of sync operations, change tracking,
- * conflict resolution, and error handling.
+ * Provides comprehensive bidirectional synchronization between FinTrac's local
+ * IndexedDB storage (via Dexie) and remote CouchDB instances, enabling seamless
+ * cross-device access to personal financial data while maintaining privacy and
+ * user control over their financial information.
  *
- * Phase 1: One-way sync (Dexie -> CouchDB) ✅
- * - Tracks local changes since last sync
- * - Uploads new/modified documents to CouchDB
- * - Maintains sync status and metadata
- * - Handles errors and retries
+ * Why this sync service is essential for FinTrac:
+ * - Enables mobile access to financial data across multiple devices
+ * - Maintains user privacy by syncing to user-controlled CouchDB instances
+ * - Provides offline-first architecture with sync when connectivity returns
+ * - Supports collaborative financial tracking for families or businesses
+ * - Ensures financial data integrity during network interruptions
+ * - Enables real-time updates across devices for immediate data consistency
  *
- * Phase 2: Bidirectional sync (Dexie <-> CouchDB) ✅
- * - Downloads changes from CouchDB to local database
- * - Merges remote changes with local data
- * - Handles basic conflict resolution
- * - Maintains separate sync sequences for each direction
+ * Sync architecture phases:
+ *
+ * Phase 1: Upload Sync (Local → Remote) ✅
+ * - Tracks local changes since last sync using timestamp comparison
+ * - Uploads new/modified transactions and categories to CouchDB
+ * - Maintains sync metadata for incremental synchronization
+ * - Handles network errors with configurable retry logic
+ * - Provides progress tracking for user feedback
+ *
+ * Phase 2: Download Sync (Remote → Local) ✅
+ * - Downloads changes from CouchDB using change feed API
+ * - Merges remote changes with local data using conflict resolution
+ * - Handles document deletions and maintains referential integrity
+ * - Updates local database atomically to prevent partial sync states
+ * - Maintains separate sync sequences for reliable state tracking
+ *
+ * Conflict resolution strategies:
+ * - Remote-wins: CouchDB version takes precedence (default)
+ * - Local-wins: Local version preserved, remote changes ignored
+ * - Manual: Conflicts flagged for user resolution (future feature)
+ *
+ * Performance optimizations:
+ * - Incremental sync using timestamp-based change detection
+ * - Configurable batch sizes for large dataset synchronization
+ * - Connection validation to prevent failed sync attempts
+ * - Auto-sync intervals for background synchronization
+ * - Efficient change feed processing for real-time updates
  */
 
 import {
@@ -74,6 +99,22 @@ export class SyncService {
   private readonly SYNC_METADATA_KEY = "sync_metadata";
   private readonly SYNC_STATUS_KEY = "sync_status";
 
+  /**
+   * Initializes FinTrac sync service with CouchDB configuration
+   *
+   * Sets up the sync service with user-provided CouchDB connection details
+   * and sync preferences. This constructor prepares the service for cross-device
+   * synchronization while applying sensible defaults for optimal performance.
+   *
+   * Why constructor configuration is comprehensive:
+   * - Users have diverse CouchDB deployment scenarios (local, cloud, self-hosted)
+   * - Network conditions vary significantly across mobile and desktop usage
+   * - Sync preferences need customization for different use cases
+   * - Performance tuning required for different dataset sizes
+   * - Conflict resolution strategies vary by user preference
+   *
+   * @param config CouchDB connection and sync configuration options
+   */
   constructor(config: SyncConfig) {
     this.config = {
       syncInterval: 30000, // 30 seconds default
@@ -104,7 +145,20 @@ export class SyncService {
   }
 
   /**
-   * Initializes the sync service and sets up CouchDB database
+   * Initializes the sync service and establishes CouchDB connection
+   *
+   * Performs comprehensive setup including connection validation, database
+   * creation, and sync metadata loading. This method must be called before
+   * any sync operations to ensure reliable cross-device synchronization.
+   *
+   * Why comprehensive initialization is critical:
+   * - Validates CouchDB connectivity before attempting sync operations
+   * - Creates database if missing to enable immediate sync capability
+   * - Loads existing sync state for reliable incremental synchronization
+   * - Provides clear error feedback for configuration issues
+   * - Prevents sync failures due to invalid or missing remote database
+   *
+   * @returns Promise resolving to true if initialization successful, false otherwise
    */
   async initialize(): Promise<boolean> {
     try {
@@ -133,7 +187,29 @@ export class SyncService {
   }
 
   /**
-   * Performs bidirectional sync between Dexie and CouchDB
+   * Performs comprehensive bidirectional sync between local and remote databases
+   *
+   * Orchestrates the complete synchronization process including upload of local
+   * changes, download of remote changes, conflict resolution, and status tracking.
+   * This is the primary method for maintaining data consistency across devices.
+   *
+   * Why bidirectional sync is essential for FinTrac:
+   * - Users expect financial data to be immediately available on all devices
+   * - Offline transaction entry must sync when connectivity returns
+   * - Multiple family members may update shared financial data
+   * - Real-time collaboration requires immediate change propagation
+   * - Data integrity depends on reliable conflict resolution
+   *
+   * Sync workflow:
+   * 1. Validate sync service state and prevent concurrent operations
+   * 2. Upload local changes to CouchDB (unless download-only mode)
+   * 3. Download remote changes from CouchDB (unless upload-only mode)
+   * 4. Resolve conflicts using configured resolution strategy
+   * 5. Update sync metadata for next incremental sync
+   * 6. Provide comprehensive result reporting for user feedback
+   *
+   * @returns Promise resolving to detailed sync result with statistics and errors
+   * @throws Error if sync is already running or configuration is invalid
    */
   async sync(): Promise<SyncResult> {
     if (this.syncStatus.isRunning) {

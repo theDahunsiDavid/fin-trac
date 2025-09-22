@@ -1,17 +1,35 @@
 /**
- * CouchDB Client Service
+ * CouchDB Client Service for FinTrac Cross-Device Synchronization
  *
- * Provides REST API communication with CouchDB for the FinTrac sync functionality.
- * This client handles all HTTP operations including document CRUD, bulk operations,
- * and change feeds for synchronization.
+ * Provides comprehensive REST API communication with CouchDB for FinTrac's
+ * bidirectional sync functionality. This client is the foundation of FinTrac's
+ * cross-device data synchronization, enabling users to access their financial
+ * data seamlessly across multiple devices while maintaining privacy and control.
  *
- * Key features:
- * - RESTful API wrapper for CouchDB operations
- * - Automatic revision handling for CouchDB's MVCC
- * - Bulk operations for efficient sync
- * - Change feed support for real-time sync
- * - Error handling and retry logic
- * - Authentication support
+ * Why this client is essential for FinTrac:
+ * - Enables cross-device sync for mobile access to financial data
+ * - Maintains user privacy by syncing to user-controlled CouchDB instances
+ * - Provides offline-first architecture with sync when connectivity returns
+ * - Supports conflict resolution for concurrent edits across devices
+ * - Ensures financial data integrity during network interruptions
+ * - Enables collaborative financial tracking for families or businesses
+ *
+ * Key architectural features:
+ * - RESTful API wrapper optimized for CouchDB document operations
+ * - Automatic revision handling for CouchDB's MVCC conflict resolution
+ * - Bulk operations for efficient sync of large transaction datasets
+ * - Change feed support for real-time sync and conflict detection
+ * - Robust error handling and retry logic for unreliable network conditions
+ * - Flexible authentication support for secure remote CouchDB access
+ * - Connection validation for reliable sync status reporting
+ *
+ * FinTrac sync integration:
+ * - Bidirectional sync between local IndexedDB and remote CouchDB
+ * - Transaction-safe bulk operations for atomic sync operations
+ * - Conflict detection and resolution for concurrent device usage
+ * - Change tracking for efficient incremental synchronization
+ * - Connection health monitoring for user sync status feedback
+ * - Optimistic sync with graceful degradation for network issues
  */
 
 export interface CouchDBConfig {
@@ -82,7 +100,21 @@ export class CouchDBClient {
   }
 
   /**
-   * Creates the database if it doesn't exist
+   * Creates the CouchDB database for FinTrac sync if it doesn't exist
+   *
+   * Initializes the remote database required for cross-device synchronization,
+   * ensuring that FinTrac users can begin syncing their financial data
+   * immediately after configuration.
+   *
+   * Why database creation is automated:
+   * - Simplifies user onboarding for sync functionality
+   * - Prevents sync failures due to missing remote database
+   * - Enables immediate sync capability after CouchDB configuration
+   * - Reduces technical barriers for non-technical users
+   * - Supports automated deployment and testing scenarios
+   *
+   * @returns Promise resolving to true if database created or already exists
+   * @throws CouchDBError if database creation fails due to permissions or connectivity
    */
   async createDatabase(): Promise<boolean> {
     try {
@@ -105,7 +137,20 @@ export class CouchDBClient {
   }
 
   /**
-   * Checks if the database exists and is accessible
+   * Validates CouchDB database accessibility for FinTrac sync operations
+   *
+   * Verifies that the remote database is available and accessible, essential
+   * for providing accurate sync status to users and preventing sync attempts
+   * against unavailable or misconfigured databases.
+   *
+   * Why database checking is critical:
+   * - Provides accurate sync status feedback to users
+   * - Prevents failed sync operations that could corrupt local data
+   * - Enables proactive error handling for configuration issues
+   * - Supports connection troubleshooting and debugging workflows
+   * - Validates user-provided CouchDB configuration before sync attempts
+   *
+   * @returns Promise resolving to true if database is accessible, false otherwise
    */
   async checkDatabase(): Promise<boolean> {
     try {
@@ -117,7 +162,22 @@ export class CouchDBClient {
   }
 
   /**
-   * Gets a document by ID
+   * Retrieves a specific document from CouchDB for sync operations
+   *
+   * Fetches individual transaction or category documents during sync operations,
+   * essential for conflict resolution, selective sync, and incremental updates
+   * in FinTrac's cross-device synchronization.
+   *
+   * Why individual document retrieval is necessary:
+   * - Conflict resolution requires examining specific document revisions
+   * - Selective sync can fetch only modified documents for efficiency
+   * - Incremental updates need current document state for comparison
+   * - Error recovery requires individual document validation and retry
+   * - User-initiated sync can target specific transactions or categories
+   *
+   * @param id CouchDB document ID (transaction or category UUID)
+   * @returns Promise resolving to document if found, null if not found
+   * @throws CouchDBError if retrieval fails due to connectivity or permissions
    */
   async getDocument(id: string): Promise<CouchDBDocument | null> {
     try {
@@ -138,7 +198,22 @@ export class CouchDBClient {
   }
 
   /**
-   * Creates or updates a document
+   * Creates or updates a document in CouchDB during sync operations
+   *
+   * Performs individual document operations for FinTrac transactions and
+   * categories, handling CouchDB's revision-based conflict detection and
+   * providing the foundation for reliable cross-device synchronization.
+   *
+   * Why individual document operations are essential:
+   * - Atomic operations ensure transaction integrity during sync
+   * - Revision handling enables proper conflict detection and resolution
+   * - Individual operations support selective sync and error recovery
+   * - Real-time sync can immediately propagate single document changes
+   * - Conflict resolution requires precise document-level operations
+   *
+   * @param doc Transaction or category document with CouchDB metadata
+   * @returns Promise resolving to CouchDB response with new revision
+   * @throws CouchDBError if operation fails due to conflicts or connectivity
    */
   async putDocument(doc: CouchDBDocument): Promise<CouchDBResponse> {
     const response = (await this.request(
@@ -150,7 +225,23 @@ export class CouchDBClient {
   }
 
   /**
-   * Deletes a document
+   * Deletes a document from CouchDB during sync operations
+   *
+   * Handles document deletion with proper revision tracking for FinTrac's
+   * cross-device sync, ensuring that transaction or category deletions
+   * propagate correctly across all connected devices.
+   *
+   * Why controlled deletion is critical:
+   * - Ensures deletion propagates to all devices in sync network
+   * - Maintains audit trail through CouchDB's revision system
+   * - Supports undo operations through document revision history
+   * - Prevents orphaned references in related documents
+   * - Enables conflict resolution for concurrent deletion scenarios
+   *
+   * @param id Document ID to delete (transaction or category UUID)
+   * @param rev Current document revision for conflict detection
+   * @returns Promise resolving to deletion confirmation
+   * @throws CouchDBError if deletion fails due to conflicts or connectivity
    */
   async deleteDocument(id: string, rev: string): Promise<CouchDBResponse> {
     const response = (await this.request(
@@ -161,7 +252,23 @@ export class CouchDBClient {
   }
 
   /**
-   * Performs bulk operations (create, update, delete multiple documents)
+   * Performs bulk document operations for efficient FinTrac sync
+   *
+   * Handles multiple document operations atomically, essential for efficient
+   * synchronization of large transaction datasets and maintaining data
+   * consistency during bulk sync operations.
+   *
+   * Why bulk operations are crucial for FinTrac:
+   * - Efficient sync of hundreds of transactions in single operation
+   * - Atomic operations prevent partial sync states that could corrupt data
+   * - Network efficiency reduces sync time and bandwidth usage
+   * - Batch conflict resolution for concurrent edits across devices
+   * - Improved user experience with faster sync completion
+   *
+   * @param docs Array of transaction/category documents to process
+   * @param options Bulk operation configuration including conflict handling
+   * @returns Promise resolving to array of operation results with conflict information
+   * @throws CouchDBError if bulk operation fails
    */
   async bulkDocs(
     docs: CouchDBDocument[],
@@ -181,7 +288,22 @@ export class CouchDBClient {
   }
 
   /**
-   * Gets all documents with optional query parameters
+   * Retrieves all documents for comprehensive sync operations
+   *
+   * Fetches complete document sets from CouchDB for full synchronization,
+   * initial sync setup, and comprehensive conflict resolution in FinTrac's
+   * cross-device data management.
+   *
+   * Why comprehensive document retrieval is necessary:
+   * - Initial sync requires complete remote dataset for comparison
+   * - Full sync recovery after extended offline periods
+   * - Comprehensive conflict resolution needs complete document context
+   * - Data validation requires full remote dataset verification
+   * - Backup and restore operations need complete document access
+   *
+   * @param options Query parameters for filtering, pagination, and document inclusion
+   * @returns Promise resolving to paginated document listing with metadata
+   * @throws CouchDBError if query fails
    */
   async allDocs(options?: {
     include_docs?: boolean;
@@ -229,7 +351,22 @@ export class CouchDBClient {
   }
 
   /**
-   * Gets changes feed for synchronization
+   * Retrieves CouchDB changes feed for incremental FinTrac synchronization
+   *
+   * Provides the foundation for efficient incremental sync by fetching only
+   * documents that have changed since the last sync operation, essential for
+   * real-time cross-device synchronization and bandwidth optimization.
+   *
+   * Why changes feed is fundamental to FinTrac sync:
+   * - Incremental sync dramatically improves performance over full sync
+   * - Real-time change detection enables immediate cross-device updates
+   * - Bandwidth optimization critical for mobile users with limited data
+   * - Change sequence tracking enables reliable sync state management
+   * - Conflict detection through change history analysis
+   *
+   * @param options Change feed parameters including sequence tracking and filtering
+   * @returns Promise resolving to changes with sequence information for sync tracking
+   * @throws CouchDBError if changes retrieval fails
    */
   async getChanges(options?: {
     since?: string;
@@ -258,7 +395,21 @@ export class CouchDBClient {
   }
 
   /**
-   * Gets database information
+   * Retrieves CouchDB database metadata for FinTrac sync monitoring
+   *
+   * Provides essential database statistics and health information for
+   * monitoring sync performance, troubleshooting issues, and displaying
+   * sync status to FinTrac users.
+   *
+   * Why database metadata is essential:
+   * - Sync status displays show remote database health and document counts
+   * - Performance monitoring tracks sync efficiency and database growth
+   * - Troubleshooting workflows need database state for issue diagnosis
+   * - User interfaces display sync progress and database synchronization status
+   * - Automated monitoring can detect database issues before they affect users
+   *
+   * @returns Promise resolving to comprehensive database metadata and statistics
+   * @throws CouchDBError if database information retrieval fails
    */
   async getInfo(): Promise<{
     db_name: string;
@@ -285,7 +436,20 @@ export class CouchDBClient {
   }
 
   /**
-   * Validates connection to CouchDB and returns status
+   * Validates CouchDB connection for FinTrac sync configuration
+   *
+   * Provides comprehensive connection testing essential for user onboarding,
+   * troubleshooting sync issues, and maintaining reliable cross-device
+   * synchronization in FinTrac.
+   *
+   * Why connection validation is critical:
+   * - User onboarding requires immediate feedback on CouchDB configuration
+   * - Sync troubleshooting needs detailed connection status information
+   * - Automated monitoring can detect connectivity issues before sync failures
+   * - User interface can provide accurate sync status and error messaging
+   * - Configuration workflows need validation before enabling sync features
+   *
+   * @returns Promise resolving to connection status with detailed error information
    */
   async validateConnection(): Promise<{
     connected: boolean;
