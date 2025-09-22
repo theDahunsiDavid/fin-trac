@@ -14,6 +14,8 @@ A privacy-friendly, local-first personal finance tracker Progressive Web App (PW
 - [Project Goals & AI Integration](#project-goals--ai-integration)
 - [Project Deliverables](#project-deliverables)
 
+<br>
+
 ## Quick Start
 
 ### Prerequisites
@@ -247,57 +249,58 @@ A privacy-friendly, local-first personal finance tracker Progressive Web App (PW
 - `npm run test:run` - Run tests once
 - `npm run test:coverage` - Generate test coverage report
 
-
+<br>
 
 ## What It Does
 
-### ✅ Core Features (Completed)
+### Core Features (Completed)
 - **Transaction Management**
-  - ✅ Add income/expense transactions manually
-  - ✅ Edit and delete existing transactions
-  - ✅ Transaction fields: date, description, amount, currency, type (credit/debit), category, tags
-  - ✅ Form validation and error handling
+  - [x] Add income/expense transactions manually
+  - [x] Edit and delete existing transactions
+  - [x] Transaction fields: date, description, amount, currency, type (credit/debit), category, tags
+  - [x] Form validation and error handling
 
 - **Data Visualization Dashboard**
-  - ✅ Balance summary (total income, expenses, net balance)
-  - ✅ Spending by category (pie chart)
-  - ✅ Monthly spending trends (line chart)
-  - ✅ Interactive charts using Recharts
-  - ✅ Responsive design for mobile and desktop
+  - [x] Balance summary (total income, expenses, net balance)
+  - [x] Spending by category (pie chart)
+  - [x] Monthly spending trends (line chart)
+  - [x] Interactive charts using Recharts
+  - [x] Responsive design for mobile and desktop
 
 - **Local-First Storage**
-  - ✅ All data stored locally using IndexedDB via PouchDB
-  - ✅ Custom bidirectional sync with CouchDB
-  - ✅ Offline-first functionality
-  - ✅ Data persistence across browser sessions
+  - [x] All data stored locally using IndexedDB via PouchDB
+  - [x] Custom bidirectional sync with CouchDB
+  - [x] Offline-first functionality
+  - [x] Data persistence across browser sessions
 
 - **Category Management**
-  - ✅ Predefined categories (Food, Transport, Entertainment, etc.)
-  - ✅ Custom category creation
-  - ✅ Color-coded categories for visual distinction
+  - [x] Predefined categories (Food, Transport, Entertainment, etc.)
+  - [x] Custom category creation
+  - [x] Color-coded categories for visual distinction
 
-### 🚧 Advanced Features (In Progress)
+### Advanced Features (In Progress)
 - **Multi-device Sync**
-  - ✅ Phase 1: One-way sync (upload local changes to CouchDB)
-  - ✅ Phase 2: Bidirectional sync (download remote changes)
-  - 🔄 Phase 3: Advanced conflict detection and resolution
-  - 📋 Phase 4: Real-time sync with WebSocket/SSE
-  - 📋 Phase 5: Selective sync and optimization
+  - [x] Phase 1: One-way sync (upload local changes to CouchDB)
+  - [x] Phase 2: Bidirectional sync (download remote changes)
+  - [-] Phase 3: Advanced conflict detection and resolution
+  - [ ] Phase 4: Real-time sync with WebSocket/SSE
+  - [ ] Phase 5: Selective sync and optimization
 
 - **Enhanced UX**
-  - ✅ Loading states and error handling
-  - ✅ Empty state messages
-  - ✅ Mobile-responsive design
-  - 📋 Dark mode support
-  - 📋 Keyboard shortcuts
+  - [x] Loading states and error handling
+  - [x] Empty state messages
+  - [x] Mobile-responsive design
+  - [ ] Dark mode support
 
-### 📋 Future Enhancements
+### Future Enhancements
 - Import/export functionality (CSV, JSON)
 - Budget tracking and alerts
 - Receipt photo attachment
 - Advanced filtering and search
 - Data analytics and insights
 - Multiple currency support
+
+<br>
 
 ## Technology Stack
 
@@ -327,6 +330,8 @@ A privacy-friendly, local-first personal finance tracker Progressive Web App (PW
 
 ### Deployment
 - **Vercel** - Production hosting and deployment platform
+
+<br>
 
 ## Project Structure & Data Models
 
@@ -388,6 +393,8 @@ fin-trac/
 }
 ```
 
+<br>
+
 ## Architecture & Design Patterns
 
 ### Local-First Approach
@@ -424,6 +431,8 @@ UI Components → Custom Hooks → Repository Layer → PouchDB → IndexedDB
 - **IndexedDB** for fast local data access
 - **Service Worker** registration for PWA functionality
 
+<br>
+
 ## Development Environment
 
 ### System Requirements
@@ -448,6 +457,8 @@ npm run test:run
 # Generate coverage report
 npm run test:coverage
 ```
+
+<br>
 
 #### Test Structure
 
@@ -484,6 +495,8 @@ describe('TransactionForm', () => {
 });
 ```
 
+<br>
+
 ### Advanced Setup Options
 
 **For detailed CouchDB troubleshooting, alternative installation methods, or production deployment configurations, see the full setup guide in the Quick Start section above.**
@@ -510,6 +523,8 @@ curl http://localhost:5984/
 # Should return CouchDB welcome message
 ```
 
+<br>
+
 ### Contributing
 
 #### Development Guidelines
@@ -532,6 +547,8 @@ curl http://localhost:5984/
 3. **Run the test suite** to ensure setup is correct
 4. **Start with small changes** to understand the codebase
 5. **Use AI tools** for scaffolding and assistance
+
+<br>
 
 ## Deployment & Production
 
@@ -591,9 +608,11 @@ FinTrac is a capstone project for the AI for Developers II program that demonstr
 3. **Data Management**: Edit, delete, and categorize transactions
 4. **Sync Setup**: Optional CouchDB configuration for multi-device access
 
+<br>
+
 ## Project Deliverables
 
-### ✅ Completed Deliverables
+### Completed Deliverables
 1. **Production-Ready Application**
    - Fully functional finance tracker PWA
    - Responsive design for all screen sizes
