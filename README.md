@@ -5,6 +5,7 @@ A privacy-friendly, local-first personal finance tracker Progressive Web App (PW
 ## Table of Contents
 
 - [Quick Start](#quick-start)
+- [Using the App](#using-the-app)
 - [What It Does](#what-it-does)
 - [Technology Stack](#technology-stack)
 - [Project Structure & Data Models](#project-structure--data-models)
@@ -248,6 +249,60 @@ A privacy-friendly, local-first personal finance tracker Progressive Web App (PW
 - `npm test` - Run tests in watch mode
 - `npm run test:run` - Run tests once
 - `npm run test:coverage` - Generate test coverage report
+
+<br>
+
+## Using the App
+
+Now that you have FinTrac running, here's how to use the application:
+
+### First Time Setup
+
+1. **Open the application** in your browser at `http://localhost:5173`
+
+2. **Handle sync connection errors** (if you see them):
+   - If you see an error message like "CouchDB connection failed" or similar sync-related errors, click the **"Clear"** link next to the error message
+   - This clears any cached connection attempts and allows you to use the app offline-first
+
+### Adding Your First Transaction
+
+1. **Add a transaction** by clicking either:
+   - **"Inflow"** button (top right) - for income/money coming in
+   - **"Spend"** button (top right) - for expenses/money going out
+
+2. **Fill out the transaction form**:
+   - **Description**: What the transaction was for (e.g., "Grocery shopping", "Salary")
+   - **Amount**: How much money (e.g., 50.00)
+   - **Category**: Select from predefined categories or create a custom one
+   - **Date**: Defaults to today, but you can change it
+   - **Tags** (optional): Add tags for better organization
+
+3. **Save the transaction** - click "Add Transaction"
+
+4. **Watch the dashboard populate**:
+   - You'll immediately see your charts and balance summary update
+   - The line chart shows trends over time
+   - Balance summary shows total income, expenses, and net balance
+
+### Using Sync (If Configured)
+
+If you've set up CouchDB sync:
+
+1. **Manual sync**: Click the **"Sync Now"** button to sync your data with CouchDB
+2. **Monitor sync status**: Watch for sync indicators showing upload/download progress
+3. **Automatic sync**: If enabled in your `.env` file, sync will happen automatically at regular intervals
+
+### Working Offline
+
+- **Full offline capability**: The app works completely without an internet connection
+- **Data persistence**: All your data is stored locally and survives browser restarts
+- **PWA installation**: Install the app on your device using "Add to Home Screen" for a native app experience
+
+### Troubleshooting Common Issues
+
+- **Sync errors**: Click "Clear" next to error messages and ensure CouchDB is running
+- **Empty charts**: Add a few transactions with different categories to see meaningful visualizations
+- **Mobile access**: Ensure both devices are on the same WiFi network when using `npm run dev -- --host`
 
 <br>
 
