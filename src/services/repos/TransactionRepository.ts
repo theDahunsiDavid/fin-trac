@@ -1,6 +1,7 @@
 import { db } from "../db/db";
 import type { Transaction } from "../../features/transactions/types";
 import type { ITransactionRepository } from "./ITransactionRepository";
+import { generateUUID } from "../utils/uuid";
 
 /**
  * Dexie implementation of Transaction Repository
@@ -19,7 +20,7 @@ export class TransactionRepository implements ITransactionRepository {
     const now = new Date().toISOString();
     const newTransaction: Transaction = {
       ...transaction,
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       createdAt: now,
       updatedAt: now,
     };
@@ -132,7 +133,7 @@ export class TransactionRepository implements ITransactionRepository {
     const now = new Date().toISOString();
     const newTransactions: Transaction[] = transactions.map((transaction) => ({
       ...transaction,
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       createdAt: now,
       updatedAt: now,
     }));

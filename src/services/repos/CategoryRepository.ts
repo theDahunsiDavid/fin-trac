@@ -1,6 +1,7 @@
 import { db } from "../db/db";
 import type { Category } from "../../features/transactions/types";
 import type { ICategoryRepository } from "./ICategoryRepository";
+import { generateUUID } from "../utils/uuid";
 
 /**
  * Dexie implementation of Category Repository
@@ -17,7 +18,7 @@ export class CategoryRepository implements ICategoryRepository {
     const now = new Date().toISOString();
     const newCategory: Category = {
       ...category,
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       createdAt: now,
       updatedAt: now,
     };
@@ -109,56 +110,56 @@ export class CategoryRepository implements ICategoryRepository {
   async getDefaults(): Promise<Category[]> {
     return [
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         name: "Food",
         color: "emerald-400",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         name: "Transport",
         color: "blue-400",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         name: "Entertainment",
         color: "purple-400",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         name: "Shopping",
         color: "pink-400",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         name: "Utilities",
         color: "orange-400",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         name: "Healthcare",
         color: "red-400",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         name: "Income",
         color: "green-400",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         name: "Other",
         color: "gray-400",
         createdAt: new Date().toISOString(),
@@ -217,7 +218,7 @@ export class CategoryRepository implements ICategoryRepository {
     const now = new Date().toISOString();
     const newCategories: Category[] = categories.map((category) => ({
       ...category,
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       createdAt: now,
       updatedAt: now,
     }));

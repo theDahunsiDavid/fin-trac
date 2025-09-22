@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TransactionModal } from "./features/transactions";
 import { DashboardChart } from "./features/dashboard";
 import { Header, SummaryCard } from "./components";
@@ -6,6 +6,7 @@ import { Header, SummaryCard } from "./components";
 import SyncControls from "./components/SyncControls";
 import { useTransactions } from "./features/transactions/hooks/useTransactions";
 import type { Transaction } from "./features/transactions/types";
+import { syncConfig } from "./services/sync/SyncConfig";
 
 /**
  * Main application component for FinTrac.
@@ -34,6 +35,187 @@ function App() {
   const [transactionType, setTransactionType] = useState<"credit" | "debit">(
     "debit",
   );
+  const [showDebug, setShowDebug] = useState(false);
+  const [networkTest, setNetworkTest] = useState<string>("");
+
+  // Debug logging for environment variables and sync config
+  useEffect(() => {
+    console.log("=== FINTRAC DEBUG INFO ===");
+    console.log("Environment variables:", {
+      VITE_SYNC_ENABLED: import.meta.env.VITE_SYNC_ENABLED,
+      VITE_COUCHDB_URL: import.meta.env.VITE_COUCHDB_URL,
+      VITE_COUCHDB_DATABASE: import.meta.env.VITE_COUCHDB_DATABASE,
+      VITE_COUCHDB_USERNAME: import.meta.env.VITE_COUCHDB_USERNAME,
+      VITE_COUCHDB_PASSWORD: import.meta.env.VITE_COUCHDB_PASSWORD
+        ? "***"
+        : undefined,
+      VITE_USE_POUCHDB: import.meta.env.VITE_USE_POUCHDB,
+    });
+
+    const config = syncConfig.getConfig();
+    console.log("Sync config:", config);
+    console.log("Sync enabled:", syncConfig.isSyncEnabled());
+
+    if (config) {
+      const validation = syncConfig.validateConfig();
+      console.log("Config validation:", validation);
+    }
+    console.log("=== END DEBUG INFO ===");
+  }, []);
+
+  // Test network connectivity
+  const testNetwork = async () => {
+    setNetworkTest("Testing...");
+    try {
+      // Test basic CouchDB connection
+      const basicResponse = await fetch("http://10.196.88.186:5984", {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      if (!basicResponse.ok) {
+        setNetworkTest(`❌ Basic CouchDB failed: ${basicResponse.status}`);
+        return;
+      }
+
+      // Test database access with authentication
+      const credentials = btoa("admin:password");
+      const dbResponse = await fetch("http://10.196.88.186:5984/fintrac-test", {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Basic ${credentials}`,
+        },
+      });
+
+      if (dbResponse.ok) {
+        const dbData = await dbResponse.json();
+        setNetworkTest(
+          `✅ Database accessible: ${dbData.db_name} (${dbData.doc_count} docs)`,
+        );
+      } else {
+        const errorData = await dbResponse.text();
+        setNetworkTest(
+          `❌ Database auth failed (${dbResponse.status}): ${errorData}`,
+        );
+      }
+    } catch (error) {
+      setNetworkTest(
+        `❌ Network error: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  };
+
+  // Test sync service connection
+  const testSyncService = async () => {
+    setNetworkTest("Testing sync service...");
+    try {
+      const config = syncConfig.getConfig();
+      if (!config) {
+        setNetworkTest("❌ No sync config available");
+        return;
+      }
+
+      // Import and test CouchDBClient directly
+      const { CouchDBClient } = await import("./services/sync/CouchDBClient");
+      const client = new CouchDBClient(config);
+
+      const validation = await client.validateConnection();
+
+      if (validation.connected) {
+        setNetworkTest(`✅ Sync service connection works!`);
+      } else {
+        setNetworkTest(`❌ Sync service failed: ${validation.error}`);
+      }
+    } catch (error) {
+      setNetworkTest(
+        `❌ Sync service error: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  };
+
+  // Test actual sync hook initialization
+  const testSyncInit = async () => {
+    setNetworkTest("Testing sync initialization...");
+    try {
+      // Import SyncService directly
+      const { SyncService } = await import("./services/sync/SyncService");
+      const config = syncConfig.getConfig();
+
+      if (!config) {
+        setNetworkTest("❌ No sync config for initialization");
+        return;
+      }
+
+      setNetworkTest("Creating SyncService...");
+      const syncService = new SyncService(config);
+
+      setNetworkTest("Initializing SyncService...");
+      const initResult = await syncService.initialize();
+
+      if (!initResult) {
+        setNetworkTest("❌ SyncService initialization failed");
+        return;
+      }
+
+      setNetworkTest("Checking connection...");
+      const connected = await syncService.checkConnection();
+
+      if (connected) {
+        setNetworkTest("Getting remote info...");
+        const remoteInfo = await syncService.getRemoteInfo();
+        setNetworkTest(
+          `✅ Full sync init works! DB: ${remoteInfo?.name}, Docs: ${remoteInfo?.docCount}`,
+        );
+      } else {
+        setNetworkTest("❌ SyncService connection check failed");
+      }
+    } catch (error) {
+      setNetworkTest(
+        `❌ Sync init error: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  };
+
+  // Test sync hook state (what SyncControls actually uses)
+  const testSyncHookState = async () => {
+    setNetworkTest("Testing sync hook state...");
+    try {
+      // Import the hook
+      await import("./hooks/useCouchDBSync");
+
+      // We can't call hooks here, but we can check the global state
+      setNetworkTest(
+        "Check SyncControls component state - this tests the actual hook instance",
+      );
+    } catch (error) {
+      setNetworkTest(
+        `❌ Hook state error: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  };
+
+  const getDebugInfo = () => {
+    const config = syncConfig.getConfig();
+    const validation = config
+      ? syncConfig.validateConfig()
+      : { valid: false, errors: ["No config"] };
+
+    return {
+      env: {
+        VITE_SYNC_ENABLED: import.meta.env.VITE_SYNC_ENABLED,
+        VITE_COUCHDB_URL: import.meta.env.VITE_COUCHDB_URL,
+        VITE_COUCHDB_DATABASE: import.meta.env.VITE_COUCHDB_DATABASE,
+        VITE_COUCHDB_USERNAME: import.meta.env.VITE_COUCHDB_USERNAME,
+        VITE_USE_POUCHDB: import.meta.env.VITE_USE_POUCHDB,
+      },
+      config,
+      syncEnabled: syncConfig.isSyncEnabled(),
+      validation,
+    };
+  };
 
   // Single source of truth for transaction data
   const {
@@ -90,6 +272,58 @@ function App() {
           onInflowClick={handleInflowClick}
           onSpendClick={handleSpendClick}
         />
+
+        {/* Debug Panel for Mobile */}
+        <div className="mb-4">
+          <button
+            onClick={() => setShowDebug(!showDebug)}
+            className="text-sm bg-blue-500 text-white px-3 py-1 rounded mr-2"
+          >
+            {showDebug ? "Hide" : "Show"} Debug Info
+          </button>
+
+          <button
+            onClick={testNetwork}
+            className="text-sm bg-green-500 text-white px-3 py-1 rounded mr-2"
+          >
+            Test Network
+          </button>
+
+          <button
+            onClick={testSyncService}
+            className="text-sm bg-purple-500 text-white px-3 py-1 rounded mr-2"
+          >
+            Test Sync Service
+          </button>
+
+          <button
+            onClick={testSyncInit}
+            className="text-sm bg-red-500 text-white px-3 py-1 rounded mr-2"
+          >
+            Test Sync Init
+          </button>
+
+          <button
+            onClick={testSyncHookState}
+            className="text-sm bg-orange-500 text-white px-3 py-1 rounded"
+          >
+            Check Hook State
+          </button>
+
+          {networkTest && (
+            <div className="mt-2 p-2 bg-yellow-100 rounded text-xs">
+              <strong>Network Test:</strong> {networkTest}
+            </div>
+          )}
+
+          {showDebug && (
+            <div className="mt-2 p-3 bg-gray-100 rounded text-xs">
+              <pre className="whitespace-pre-wrap overflow-auto">
+                {JSON.stringify(getDebugInfo(), null, 2)}
+              </pre>
+            </div>
+          )}
+        </div>
 
         {/* CouchDB Sync Components */}
         <div className="mb-6">

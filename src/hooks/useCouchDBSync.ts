@@ -24,8 +24,10 @@ export interface CouchDBSyncState {
 
   // Progress tracking
   documentsUploaded: number;
+  documentsDownloaded: number;
   documentsTotal: number;
   progress: number;
+  syncDirection: "upload" | "download" | "both" | "idle";
 
   // Error handling
   error: string | null;
@@ -86,14 +88,18 @@ export const useCouchDBSync = (
       isRunning: false,
       error: null,
       documentsUploaded: 0,
+      documentsDownloaded: 0,
       documentsTotal: 0,
       progress: 0,
+      syncDirection: "idle",
     },
     isRunning: false,
     lastSync: null,
     documentsUploaded: 0,
+    documentsDownloaded: 0,
     documentsTotal: 0,
     progress: 0,
+    syncDirection: "idle",
     error: null,
     remoteInfo: null,
   });
@@ -190,6 +196,7 @@ export const useCouchDBSync = (
             setState((prev) => ({
               ...prev,
               remoteInfo,
+              error: null, // Clear any errors since connection and remote info worked
             }));
           }
 
@@ -293,6 +300,7 @@ export const useCouchDBSync = (
       setState((prev) => ({
         ...prev,
         isConnected: connected,
+        error: connected ? null : prev.error, // Clear error if connected
       }));
       return connected;
     } catch {
@@ -319,6 +327,7 @@ export const useCouchDBSync = (
         ...prev,
         remoteInfo,
         isConnected: !!remoteInfo,
+        error: remoteInfo ? null : prev.error, // Clear error if remote info retrieved
       }));
     } catch {
       setState((prev) => ({
@@ -345,8 +354,10 @@ export const useCouchDBSync = (
       isRunning: syncStatus.isRunning,
       lastSync: syncStatus.lastSync,
       documentsUploaded: syncStatus.documentsUploaded,
+      documentsDownloaded: syncStatus.documentsDownloaded,
       documentsTotal: syncStatus.documentsTotal,
       progress: syncStatus.progress,
+      syncDirection: syncStatus.syncDirection,
       error: syncStatus.error,
     }));
   }, []);
@@ -355,6 +366,12 @@ export const useCouchDBSync = (
    * Clear error state
    */
   const clearError = useCallback(() => {
+    // Clear error in the sync service itself
+    const serviceToUse = syncServiceRef.current || globalSyncService;
+    if (serviceToUse) {
+      serviceToUse.clearError();
+    }
+
     setState((prev) => ({
       ...prev,
       error: null,
@@ -437,8 +454,10 @@ export const useCouchDBSyncStatus = () => {
     isRunning,
     lastSync,
     documentsUploaded,
+    documentsDownloaded,
     documentsTotal,
     progress,
+    syncDirection,
     error,
     remoteInfo,
     config,
@@ -452,8 +471,10 @@ export const useCouchDBSyncStatus = () => {
     isRunning,
     lastSync,
     documentsUploaded,
+    documentsDownloaded,
     documentsTotal,
     progress,
+    syncDirection,
     error,
     remoteInfo,
     config,

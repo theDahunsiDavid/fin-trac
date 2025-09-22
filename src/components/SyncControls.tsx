@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useCouchDBSync } from "../hooks/useCouchDBSync";
 
 interface SyncControlsProps {
@@ -17,11 +17,13 @@ export const SyncControls: React.FC<SyncControlsProps> = ({
     isRunning,
     lastSync,
     documentsUploaded,
+    documentsDownloaded,
     documentsTotal,
     progress,
     error,
     remoteInfo,
     config,
+    syncDirection,
     sync,
     startAutoSync,
     stopAutoSync,
@@ -34,6 +36,18 @@ export const SyncControls: React.FC<SyncControlsProps> = ({
   const [isOperating, setIsOperating] = useState(false);
   const [operationMessage, setOperationMessage] = useState<string>("");
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
+
+  // Debug logging for sync hook state
+  useEffect(() => {
+    console.log("=== SYNC CONTROLS DEBUG ===");
+    console.log("isEnabled:", isEnabled);
+    console.log("isConnected:", isConnected);
+    console.log("isInitialized:", isInitialized);
+    console.log("error:", error);
+    console.log("config:", config);
+    console.log("remoteInfo:", remoteInfo);
+    console.log("=== END SYNC CONTROLS DEBUG ===");
+  }, [isEnabled, isConnected, isInitialized, error, config, remoteInfo]);
 
   // Don't render if sync is not configured
   if (!config) {
@@ -184,15 +198,32 @@ export const SyncControls: React.FC<SyncControlsProps> = ({
 
       {isRunning && documentsTotal > 0 && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-          <p className="text-sm text-blue-800">
-            Syncing {documentsUploaded} / {documentsTotal} documents...
-          </p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm text-blue-800">
+              {syncDirection === "upload" &&
+                `Uploading ${documentsUploaded} / ${documentsTotal} documents...`}
+              {syncDirection === "download" &&
+                `Downloading ${documentsDownloaded} documents...`}
+              {syncDirection === "both" &&
+                `Syncing ${documentsUploaded + documentsDownloaded} / ${documentsTotal} documents...`}
+              {syncDirection === "idle" && "Sync idle"}
+            </p>
+            <span className="text-xs text-blue-600 capitalize">
+              {syncDirection}
+            </span>
+          </div>
           <div className="mt-2 w-full bg-blue-200 rounded-full h-2">
             <div
               className="bg-blue-600 h-2 rounded-full transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
+          {(documentsUploaded > 0 || documentsDownloaded > 0) && (
+            <div className="mt-2 flex justify-between text-xs text-blue-700">
+              <span>↑ {documentsUploaded} uploaded</span>
+              <span>↓ {documentsDownloaded} downloaded</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -204,7 +235,19 @@ export const SyncControls: React.FC<SyncControlsProps> = ({
             disabled={!canSync || isOperating}
             className="flex-1 bg-emerald-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
           >
-            {isRunning ? "Syncing..." : "Sync Now"}
+            {isRunning
+              ? syncDirection === "upload"
+                ? "Uploading..."
+                : syncDirection === "download"
+                  ? "Downloading..."
+                  : syncDirection === "both"
+                    ? "Syncing..."
+                    : "Syncing..."
+              : config?.bidirectional
+                ? "Sync Now"
+                : config?.downloadOnly
+                  ? "Download"
+                  : "Upload"}
           </button>
 
           <button

@@ -75,6 +75,92 @@ export const useTransactions = () => {
     fetchTransactions();
   }, [fetchTransactions]);
 
+  // Listen for sync data changes to automatically refresh UI
+  useEffect(() => {
+    const handleSyncDataUpdate = (event: CustomEvent) => {
+      const { eventType } = event.detail;
+      console.log(
+        `Sync data updated: ${eventType}, refreshing transactions...`,
+      );
+      fetchTransactions();
+    };
+
+    const handleTransactionSync = () => {
+      console.log("Transaction sync event detected, refreshing...");
+      fetchTransactions();
+    };
+
+    const handleCategorySync = () => {
+      console.log("Category sync event detected, refreshing...");
+      fetchTransactions(); // Categories affect transaction display
+    };
+
+    // Listen for general sync data updates
+    window.addEventListener(
+      "sync-data-updated",
+      handleSyncDataUpdate as EventListener,
+    );
+
+    // Listen for specific transaction events
+    window.addEventListener(
+      "sync-transaction-added",
+      handleTransactionSync as EventListener,
+    );
+    window.addEventListener(
+      "sync-transaction-updated",
+      handleTransactionSync as EventListener,
+    );
+    window.addEventListener(
+      "sync-transaction-conflict-resolved",
+      handleTransactionSync as EventListener,
+    );
+
+    // Listen for category events (affects transaction display)
+    window.addEventListener(
+      "sync-category-added",
+      handleCategorySync as EventListener,
+    );
+    window.addEventListener(
+      "sync-category-updated",
+      handleCategorySync as EventListener,
+    );
+    window.addEventListener(
+      "sync-category-conflict-resolved",
+      handleCategorySync as EventListener,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "sync-data-updated",
+        handleSyncDataUpdate as EventListener,
+      );
+      window.removeEventListener(
+        "sync-transaction-added",
+        handleTransactionSync as EventListener,
+      );
+      window.removeEventListener(
+        "sync-transaction-updated",
+        handleTransactionSync as EventListener,
+      );
+      window.removeEventListener(
+        "sync-transaction-conflict-resolved",
+        handleTransactionSync as EventListener,
+      );
+      window.removeEventListener(
+        "sync-category-added",
+        handleCategorySync as EventListener,
+      );
+      window.removeEventListener(
+        "sync-category-updated",
+        handleCategorySync as EventListener,
+      );
+      window.removeEventListener(
+        "sync-category-conflict-resolved",
+        handleCategorySync as EventListener,
+      );
+    };
+  }, [fetchTransactions]);
+
   /**
    * Adds a new transaction to the database
    */
@@ -83,19 +169,47 @@ export const useTransactions = () => {
       transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt">,
     ): Promise<Transaction | null> => {
       try {
+        console.log("=== ADD TRANSACTION DEBUG ===");
+        console.log("Input transaction:", transaction);
+        console.log("Repository implementation:", getImplementation());
+        console.log("Repository instance:", repo);
+
         setOperationLoading(true);
         setError(null);
 
+        console.log("Calling repo.create...");
         const newTransaction = await repo.create(transaction);
+        console.log("Repository create successful:", newTransaction);
 
+        console.log("Updating local state...");
         // Update local state
-        setTransactions((prev) => [newTransaction, ...prev]);
+        setTransactions((prev) => {
+          console.log("Previous transactions count:", prev.length);
+          const updated = [newTransaction, ...prev];
+          console.log("Updated transactions count:", updated.length);
+          return updated;
+        });
 
+        console.log("Transaction added successfully");
+        console.log("=== END ADD TRANSACTION DEBUG ===");
         return newTransaction;
       } catch (err) {
+        console.error("=== ADD TRANSACTION ERROR ===");
+        console.error("Error type:", typeof err);
+        console.error("Error constructor:", err?.constructor?.name);
+        console.error(
+          "Error message:",
+          err instanceof Error ? err.message : "No message",
+        );
+        console.error(
+          "Error stack:",
+          err instanceof Error ? err.stack : "No stack",
+        );
+        console.error("Full error object:", err);
+        console.error("=== END ADD TRANSACTION ERROR ===");
+
         const errorMessage =
           err instanceof Error ? err.message : "Failed to add transaction";
-        console.error("Failed to add transaction:", err);
         setError(errorMessage);
         return null;
       } finally {

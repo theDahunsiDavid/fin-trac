@@ -285,6 +285,159 @@ export class CouchDBClient {
   }
 
   /**
+   * Validates connection to CouchDB and returns status
+   */
+  async validateConnection(): Promise<{
+    connected: boolean;
+    error?: string;
+    serverInfo?: {
+      couchdb: string;
+      version: string;
+      vendor: { name: string };
+    };
+  }> {
+    try {
+      // Test basic connection to CouchDB server
+      const serverInfo = (await this.request("GET", this.config.url)) as {
+        couchdb: string;
+        version: string;
+        vendor: { name: string };
+      };
+
+      // Test database access
+      await this.request("GET", this.baseUrl);
+
+      return {
+        connected: true,
+        serverInfo,
+      };
+    } catch (error) {
+      return {
+        connected: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+
+  /**
+   * Gets a document with conflict information
+   */
+  async getDocumentWithConflicts(id: string): Promise<{
+    doc: CouchDBDocument | null;
+    conflicts?: string[];
+  }> {
+    try {
+      const doc = (await this.request(
+        "GET",
+        `${this.baseUrl}/${encodeURIComponent(id)}?conflicts=true`,
+        undefined,
+        3,
+        true,
+      )) as CouchDBDocument & { _conflicts?: string[] };
+
+      if (!doc) {
+        return { doc: null };
+      }
+
+      const conflicts = doc._conflicts;
+      delete doc._conflicts; // Remove from main doc object
+
+      return {
+        doc,
+        conflicts,
+      };
+    } catch (error) {
+      if ((error as CouchDBError).status === 404) {
+        return { doc: null };
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Gets multiple documents by IDs
+   */
+  async getDocuments(ids: string[]): Promise<{
+    docs: (CouchDBDocument | null)[];
+    errors: Array<{ id: string; error: string }>;
+  }> {
+    const docs: (CouchDBDocument | null)[] = [];
+    const errors: Array<{ id: string; error: string }> = [];
+
+    // Use _all_docs with keys parameter for efficient bulk retrieval
+    try {
+      const response = (await this.request(
+        "POST",
+        `${this.baseUrl}/_all_docs`,
+        {
+          keys: ids,
+          include_docs: true,
+        },
+      )) as {
+        rows: Array<{
+          id: string;
+          key: string;
+          value?: { rev: string };
+          doc?: CouchDBDocument;
+          error?: string;
+        }>;
+      };
+
+      for (const row of response.rows) {
+        if (row.error) {
+          docs.push(null);
+          errors.push({ id: row.id, error: row.error });
+        } else {
+          docs.push(row.doc || null);
+        }
+      }
+    } catch (error) {
+      // Fallback to individual requests if bulk operation fails
+      console.warn(
+        "Bulk document retrieval failed, using individual requests:",
+        error,
+      );
+      for (const id of ids) {
+        try {
+          const doc = await this.getDocument(id);
+          docs.push(doc);
+        } catch (err) {
+          docs.push(null);
+          errors.push({
+            id,
+            error: err instanceof Error ? err.message : "Unknown error",
+          });
+        }
+      }
+    }
+
+    return { docs, errors };
+  }
+
+  /**
+   * Creates or updates multiple documents efficiently
+   */
+  async putDocuments(docs: CouchDBDocument[]): Promise<{
+    results: CouchDBBulkResponse[];
+    errors: Array<{ id: string; error: string; reason?: string }>;
+  }> {
+    const results = await this.bulkDocs(docs);
+    const errors: Array<{ id: string; error: string; reason?: string }> = [];
+
+    for (const result of results) {
+      if (!result.ok && result.error) {
+        errors.push({
+          id: result.id,
+          error: result.error,
+          reason: result.reason,
+        });
+      }
+    }
+
+    return { results, errors };
+  }
+
+  /**
    * Generic HTTP request method with error handling and retries
    */
   private async request(
@@ -395,34 +548,5 @@ export class CouchDBClient {
    */
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  /**
-   * Validates the CouchDB connection and configuration
-   */
-  async validateConnection(): Promise<{
-    connected: boolean;
-    error?: string;
-    version?: string;
-  }> {
-    try {
-      // Test connection to CouchDB root
-      const rootInfo = (await this.request("GET", this.config.url)) as {
-        version: string;
-      };
-
-      // Test database access
-      await this.checkDatabase();
-
-      return {
-        connected: true,
-        version: rootInfo.version,
-      };
-    } catch (error) {
-      return {
-        connected: false,
-        error: (error as Error).message,
-      };
-    }
   }
 }
