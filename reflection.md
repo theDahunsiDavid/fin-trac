@@ -20,5 +20,5 @@ Committing your codebase after every **working feature implementation** or bug f
 - When prompting, prompt in steps. This is more important when trying to implement something complex.<br><br>
 For example, a database migration. Tell the AI what you want to do (e.g., move from Dexie to PouchDB). Tell it to outline each step you’ll need to take to properly implement this migration to the tiniest detail, and tell it to save these steps into a DATABASE_MIGRATION.md file.<br><br>
 Furthermore, you can tell it to split these steps into phases (e.g., Phase 1, Phase 2). Then you can tell it to implement Phase 1 as outlined in DATABASE_MIGRATION.md, injecting the created markdown file as context.
-- Use one AI tool only for code generation. I find that this makes debugging easier and ensures that the AI tool enough context to help with debugging.
+- Use one AI tool only for code generation. I find that this makes debugging easier and ensures that the AI tool has enough context to help with debugging.
 - Be specific in your prompts. Tell the AI exactly what you want it to do and let it know that that is only what it should do.
