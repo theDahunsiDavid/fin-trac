@@ -7,6 +7,7 @@ A privacy-friendly, local-first personal finance tracker Progressive Web App (PW
 ### Prerequisites
 - Node.js (v18 or higher)
 - npm or yarn
+- Docker (optional, for CouchDB sync functionality)
 
 ### Setup & Installation
 
@@ -21,12 +22,149 @@ A privacy-friendly, local-first personal finance tracker Progressive Web App (PW
    npm install
    ```
 
-3. **Start the development server:**
+3. **Set up CouchDB (Optional - for multi-device sync):**
+
+   The application works fully offline without CouchDB. Set this up only if you want cross-device synchronization.
+
+   **Option A: Using Docker (Recommended)**
+   ```bash
+   # Install Docker (Arch Linux)
+   sudo pacman -S docker docker-compose # If you're on Arch Linux. For other distros, use the appropriate package manager.
+   sudo systemctl start docker
+   sudo systemctl enable docker
+
+   # Run CouchDB container
+   docker run -d \
+     --name fintrac-couchdb \
+     -p 5984:5984 \
+     -e COUCHDB_USER=admin \
+     -e COUCHDB_PASSWORD=password \
+     -v couchdb-data:/opt/couchdb/data \
+     couchdb:3.3
+   ```
+
+   **Option B: Direct Installation**
+   ```bash
+   # Arch Linux
+   sudo pacman -S couchdb
+   sudo systemctl start couchdb
+   sudo systemctl enable couchdb
+   ```
+
+4. **Configure CouchDB (If using sync):**
+
+   **Step 1: Access CouchDB Admin Interface**
+   ```bash
+   # Open in browser
+   http://localhost:5984/_utils
+   ```
+
+   **Step 2: Set up Admin User**
+   - Click "Setup" if this is first time setup
+   - Choose "Single Node Setup"
+   - Create admin user (username: `admin`, password: `password`)
+   - Or if already set up, login with your admin credentials
+
+   **Step 3: Enable CORS (Required for browser access)**
+
+   Navigate to Configuration → CORS or use curl:
+   ```bash
+   # Enable CORS
+   curl -X PUT http://admin:password@localhost:5984/_node/_local/_config/httpd/enable_cors -d '"true"'
+   curl -X PUT http://admin:password@localhost:5984/_node/_local/_config/cors/origins -d '"*"'
+   curl -X PUT http://admin:password@localhost:5984/_node/_local/_config/cors/credentials -d '"true"'
+   curl -X PUT http://admin:password@localhost:5984/_node/_local/_config/cors/methods -d '"GET, PUT, POST, HEAD, DELETE"'
+   curl -X PUT http://admin:password@localhost:5984/_node/_local/_config/cors/headers -d '"accept, authorization, content-type, origin, referer, x-csrf-token"'
+   ```
+
+   **Step 4: Create FinTrac Database**
+   ```bash
+   # Create the database (or it will be created automatically by the app)
+   curl -X PUT http://admin:password@localhost:5984/fintrac
+   ```
+
+5. **Configure Environment Variables (If using sync):**
+
+   Create a `.env` file in the project root with your CouchDB configuration:
+
+   ```bash
+   # Core CouchDB Configuration
+   VITE_SYNC_ENABLED=true
+   VITE_COUCHDB_URL=http://localhost:5984
+   VITE_COUCHDB_DATABASE=fintrac
+   VITE_COUCHDB_USERNAME=admin
+   VITE_COUCHDB_PASSWORD=password
+
+   # Sync Behavior Settings
+   VITE_SYNC_AUTO_START=false
+   VITE_SYNC_BIDIRECTIONAL=true
+   VITE_SYNC_DOWNLOAD_ONLY=false
+   VITE_SYNC_UPLOAD_ONLY=false
+
+   # Performance Tuning
+   VITE_SYNC_INTERVAL=30000
+   VITE_SYNC_BATCH_SIZE=50
+
+   # Conflict Resolution
+   VITE_SYNC_CONFLICT_RESOLUTION=remote-wins
+   ```
+
+   **Environment Variable Reference:**
+
+   | Variable | Default | Description |
+   |----------|---------|-------------|
+   | `VITE_SYNC_ENABLED` | `false` | Master switch to enable/disable sync functionality |
+   | `VITE_COUCHDB_URL` | `http://localhost:5984` | CouchDB server URL |
+   | `VITE_COUCHDB_DATABASE` | `fintrac` | Database name (must be lowercase) |
+   | `VITE_COUCHDB_USERNAME` | - | Admin username for authentication |
+   | `VITE_COUCHDB_PASSWORD` | - | Admin password for authentication |
+   | `VITE_SYNC_AUTO_START` | `false` | Start sync automatically when app loads |
+   | `VITE_SYNC_BIDIRECTIONAL` | `true` | Enable two-way sync (upload + download) |
+   | `VITE_SYNC_DOWNLOAD_ONLY` | `false` | Only download changes from server |
+   | `VITE_SYNC_UPLOAD_ONLY` | `false` | Only upload changes to server |
+   | `VITE_SYNC_INTERVAL` | `30000` | Auto-sync interval in milliseconds |
+   | `VITE_SYNC_BATCH_SIZE` | `50` | Number of documents per sync batch |
+   | `VITE_SYNC_CONFLICT_RESOLUTION` | `remote-wins` | How to handle conflicts: `remote-wins`, `local-wins`, `manual` |
+
+   **Example Configurations:**
+
+   *Development (Local CouchDB):*
+   ```bash
+   VITE_SYNC_ENABLED=true
+   VITE_COUCHDB_URL=http://localhost:5984
+   VITE_COUCHDB_USERNAME=admin
+   VITE_COUCHDB_PASSWORD=password
+   ```
+
+   *Production (Remote CouchDB - Domain):*
+   ```bash
+   VITE_SYNC_ENABLED=true
+   VITE_COUCHDB_URL=https://your-couchdb-server.com
+   VITE_COUCHDB_USERNAME=your-username
+   VITE_COUCHDB_PASSWORD=your-secure-password
+   VITE_SYNC_AUTO_START=true
+   ```
+   
+   *Production (Remote CouchDB - Network IP):*
+   ```bash
+   VITE_SYNC_ENABLED=true
+   VITE_COUCHDB_URL=http://192.168.1.100:5984 # Replace with your local network IP address followed by port 5984
+   VITE_COUCHDB_USERNAME=your-username
+   VITE_COUCHDB_PASSWORD=your-secure-password
+   VITE_SYNC_AUTO_START=true
+   ```
+
+   *Offline-Only (No Sync):*
+   ```bash
+   VITE_SYNC_ENABLED=false
+   ```
+
+6. **Start the development server:**
    ```bash
    npm run dev
    ```
 
-4. **Open your browser:**
+7. **Open your browser:**
    Navigate to `http://localhost:5173` to view the application.
 
 ### Available Scripts
@@ -194,19 +332,114 @@ UI Components → Custom Hooks → Repository Layer → PouchDB → IndexedDB
 - **Package Manager**: npm (included with Node.js)
 - **Browser**: Modern browser with IndexedDB support
 
-### Optional Dependencies
-- **Docker**: For CouchDB local development
-  ```bash
-  sudo pacman -S docker  # On Arch Linux
-  ```
-- **CouchDB**: For sync functionality
-  ```bash
-  docker run -p 5984:5984 -d couchdb:latest
-  ```
+### CouchDB Setup Requirements (Optional - for sync functionality)
+
+FinTrac works completely offline without CouchDB. Only set up CouchDB if you need multi-device synchronization.
+
+**Required CouchDB Configuration:**
+- **Version**: CouchDB 3.x or higher
+- **CORS**: Must be enabled for browser access
+- **Admin User**: Required for database operations
+- **Database**: `fintrac` database (created automatically if missing)
+
+**Security Considerations:**
+- Change default admin password in production
+- Use HTTPS for remote CouchDB instances
+- Restrict CORS origins in production environments
+- Consider firewall rules for CouchDB port (5984)
+
+### Docker Setup (Recommended for CouchDB)
+```bash
+# Complete Docker setup for CouchDB
+sudo pacman -S docker docker-compose
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker $USER  # Add user to docker group
+newgrp docker  # Refresh group membership
+
+# Alternative: Docker Compose setup
+# Create docker-compose.yml:
+version: '3.8'
+services:
+  couchdb:
+    image: couchdb:3.3
+    container_name: fintrac-couchdb
+    ports:
+      - "5984:5984"
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=password
+    volumes:
+      - couchdb-data:/opt/couchdb/data
+    restart: unless-stopped
+volumes:
+  couchdb-data:
+
+# Then run:
+docker-compose up -d
+```
+
+### Manual CouchDB Installation
+```bash
+# Arch Linux
+sudo pacman -S couchdb
+
+# Ubuntu/Debian
+sudo apt-get install couchdb
+
+# Configure and start
+sudo systemctl start couchdb
+sudo systemctl enable couchdb
+```
 
 ### IDE Recommendations
 - **Zed Editor** (Integration with GitHub Copilot was used in development)
 - **OpenCode CLI** was used to scaffold initial files and folders during development
+
+### Troubleshooting CouchDB Setup
+
+**Common Issues:**
+
+1. **CORS Errors**
+   ```bash
+   # Verify CORS is enabled
+   curl http://localhost:5984/_node/_local/_config/httpd/enable_cors
+   # Should return: "true"
+   ```
+
+2. **Authentication Failures**
+   ```bash
+   # Test admin credentials
+   curl -u admin:password http://localhost:5984/_session
+   # Should return user session info
+   ```
+
+3. **Database Access Issues**
+   ```bash
+   # Check if database exists
+   curl http://admin:password@localhost:5984/fintrac
+   # Should return database info or 404 if not created
+   ```
+
+4. **Connection Issues**
+   ```bash
+   # Test CouchDB is running
+   curl http://localhost:5984/
+   # Should return CouchDB welcome message
+   ```
+
+**Docker-specific Issues:**
+```bash
+# Check container status
+docker ps
+docker logs fintrac-couchdb
+
+# Restart container if needed
+docker restart fintrac-couchdb
+
+# Access container for debugging
+docker exec -it fintrac-couchdb bash
+```
 
 ## Technical Foundation
 
