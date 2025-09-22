@@ -2,6 +2,18 @@
 
 A privacy-friendly, local-first personal finance tracker Progressive Web App (PWA) built with AI-assisted development practices.
 
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [What It Does](#what-it-does)
+- [Technology Stack](#technology-stack)
+- [Project Structure & Data Models](#project-structure--data-models)
+- [Architecture & Design Patterns](#architecture--design-patterns)
+- [Development Environment](#development-environment)
+- [Deployment & Production](#deployment--production)
+- [Project Goals & AI Integration](#project-goals--ai-integration)
+- [Project Deliverables](#project-deliverables)
+
 ## Quick Start
 
 ### Prerequisites
@@ -28,7 +40,7 @@ A privacy-friendly, local-first personal finance tracker Progressive Web App (PW
 
    **Option A: Using Docker (Recommended)**
    ```bash
-   # Install Docker (Arch Linux)
+   # Install Docker
    sudo pacman -S docker docker-compose # If you're on Arch Linux. For other distros, use the appropriate package manager.
    sudo systemctl start docker
    sudo systemctl enable docker
@@ -43,15 +55,39 @@ A privacy-friendly, local-first personal finance tracker Progressive Web App (PW
      couchdb:3.3
    ```
 
+   **Managing CouchDB Container:**
+
+   Once you've created the container, you can use these commands to manage it:
+
+   ```bash
+   # Check container status (running and stopped)
+   docker ps -a
+
+   # Start existing container (if stopped)
+   docker start fintrac-couchdb
+
+   # Stop running container
+   docker stop fintrac-couchdb
+
+   # Restart container (if running)
+   docker restart fintrac-couchdb
+
+   # View container logs
+   docker logs fintrac-couchdb
+
+   # Remove container completely (data will be preserved in volume)
+   docker rm fintrac-couchdb
+   ```
+
    **Option B: Direct Installation**
    ```bash
    # Arch Linux
-   sudo pacman -S couchdb
+   sudo pacman -S couchdb # For other distros, use the appropriate package manager.
    sudo systemctl start couchdb
    sudo systemctl enable couchdb
    ```
 
-4. **Configure CouchDB (If using sync):**
+4. **Configure CouchDB (If you want to use sync):**
 
    **Step 1: Access CouchDB Admin Interface**
    ```bash
@@ -136,19 +172,19 @@ A privacy-friendly, local-first personal finance tracker Progressive Web App (PW
    VITE_COUCHDB_PASSWORD=password
    ```
 
-   *Production (Remote CouchDB - Domain):*
-   ```bash
-   VITE_SYNC_ENABLED=true
-   VITE_COUCHDB_URL=https://your-couchdb-server.com
-   VITE_COUCHDB_USERNAME=your-username
-   VITE_COUCHDB_PASSWORD=your-secure-password
-   VITE_SYNC_AUTO_START=true
-   ```
-   
    *Production (Remote CouchDB - Network IP):*
    ```bash
    VITE_SYNC_ENABLED=true
    VITE_COUCHDB_URL=http://192.168.1.100:5984 # Replace with your local network IP address followed by port 5984
+   VITE_COUCHDB_USERNAME=your-username
+   VITE_COUCHDB_PASSWORD=your-secure-password
+   VITE_SYNC_AUTO_START=true
+   ```
+
+   *Production (Remote CouchDB - Domain):*
+   ```bash
+   VITE_SYNC_ENABLED=true
+   VITE_COUCHDB_URL=https://your-couchdb-server.com
    VITE_COUCHDB_USERNAME=your-username
    VITE_COUCHDB_PASSWORD=your-secure-password
    VITE_SYNC_AUTO_START=true
@@ -160,23 +196,60 @@ A privacy-friendly, local-first personal finance tracker Progressive Web App (PW
    ```
 
 6. **Start the development server:**
+
+   **For local development only:**
    ```bash
    npm run dev
    ```
 
+   **For mobile device access (recommended for PWA testing):**
+   ```bash
+   npm run dev -- --host
+   ```
+
+   When using `--host`, Vite will show multiple URLs:
+   ```
+   ➜  Local:   http://localhost:5173/
+   ➜  Network: http://192.168.1.xxx:5173/
+   ```
+
 7. **Open your browser:**
+
+   **Desktop access:**
    Navigate to `http://localhost:5173` to view the application.
+
+   **Mobile device access:**
+   1. **Ensure devices are on the same network** (same WiFi)
+   2. **Find your computer's IP address:**
+      ```bash
+      # On Linux
+      ip addr show | grep "inet 192"
+      # Or use the Network URL shown by Vite
+      ```
+   3. **Open on mobile browser:**
+      Navigate to `http://YOUR_IP_ADDRESS:5173` (e.g., `http://192.168.1.100:5173`)
+   4. **Install as PWA** (optional):
+      - Chrome/Safari: Look for "Add to Home Screen" or "Install App" prompt
+      - Test offline functionality and mobile responsiveness
+
+   **Troubleshooting Mobile Access:**
+   - **Firewall**: Ensure port 5173 is open on your development machine
+   - **Network**: Both devices must be on the same local network
+   - **HTTPS**: Some PWA features require HTTPS (use ngrok for testing if needed)
 
 ### Available Scripts
 
-- `npm run dev` - Start development server
+- `npm run dev` - Start development server (localhost only)
+- `npm run dev -- --host` - Start development server accessible on network (for mobile testing)
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 - `npm test` - Run tests in watch mode
 - `npm run test:run` - Run tests once
 - `npm run test:coverage` - Generate test coverage report
 
-## Features Implemented
+
+
+## What It Does
 
 ### ✅ Core Features (Completed)
 - **Transaction Management**
@@ -255,196 +328,9 @@ A privacy-friendly, local-first personal finance tracker Progressive Web App (PW
 ### Deployment
 - **Vercel** - Production hosting and deployment platform
 
-## Project Goals & AI Integration
+## Project Structure & Data Models
 
-FinTrac is a capstone project for the AI for Developers II program that demonstrates practical application of AI-assisted development practices. The application serves as a privacy-friendly, local-first personal finance dashboard.
-
-### Primary Objectives:
-- Apply AI-assisted development workflows in a real-world project
-- Demonstrate schema-aware coding and automated review processes
-- Showcase effective use of in-IDE AI tooling
-- Build a functional, user-friendly finance tracking application
-
-### AI Integration in Development:
-- **Planning & Architecture**: AI-assisted project structure and technical decisions
-- **Code Generation**: Automated React component and TypeScript interface creation
-- **Testing**: AI-generated test suites and edge case identification
-- **Documentation**: Living documentation maintained with AI assistance
-- **Debugging**: AI-powered error analysis and resolution suggestions
-
-## Migration to PouchDB + CouchDB Sync
-
-This project implements a custom bidirectional sync system between Dexie.js and CouchDB. The implementation phases:
-
-- **Phase 1 (One-way Sync)**: ✅ Completed - Upload local changes to CouchDB with conflict resolution
-- **Phase 2 (Bidirectional Sync)**: ✅ Completed - Download remote changes from CouchDB with conflict handling
-- **Phase 3 (Multi-device Sync)**: Planned - Advanced conflict detection and resolution
-- **Phase 4 (Real-time Sync)**: Planned - WebSocket/SSE for live updates
-- **Phase 5 (Advanced Features)**: Planned - Selective sync, compression, optimization
-
-<br>
-
-## Architecture & Design Patterns
-
-### Local-First Approach
-FinTrac prioritizes local data storage and offline functionality:
-- All user data remains on device by default
-- Sync is optional and user-controlled
-- No external dependencies for core functionality
-- Privacy-by-design architecture
-
-### Data Flow Architecture
-```
-UI Components → Custom Hooks → Repository Layer → PouchDB → IndexedDB
-                                      ↓
-                              CouchDB Sync Service → Remote CouchDB
-```
-
-### Component Architecture
-- **Feature-based organization** with clear separation of concerns
-- **Custom hooks** for state management and business logic
-- **Repository pattern** for data access abstraction
-- **Service layer** for external integrations and utilities
-
-<br>
-
-## User Experience
-
-### Target Users
-- **Individuals** seeking simple, private expense tracking
-- **Privacy-conscious users** who prefer local data storage
-- **Users** wanting offline-capable financial tools
-- **Multi-device users** requiring optional cloud synchronization
-
-### Key User Flows
-1. **Quick Transaction Entry**: Add expense/income in under 30 seconds
-2. **Visual Insights**: View spending patterns through interactive charts
-3. **Data Management**: Edit, delete, and categorize transactions
-4. **Sync Setup**: Optional CouchDB configuration for multi-device access
-
-<br>
-
-## Development Environment Setup
-
-### System Requirements
-- **Operating System**: Linux
-- **Node.js**: Version 18 or higher
-- **Package Manager**: npm (included with Node.js)
-- **Browser**: Modern browser with IndexedDB support
-
-### CouchDB Setup Requirements (Optional - for sync functionality)
-
-FinTrac works completely offline without CouchDB. Only set up CouchDB if you need multi-device synchronization.
-
-**Required CouchDB Configuration:**
-- **Version**: CouchDB 3.x or higher
-- **CORS**: Must be enabled for browser access
-- **Admin User**: Required for database operations
-- **Database**: `fintrac` database (created automatically if missing)
-
-**Security Considerations:**
-- Change default admin password in production
-- Use HTTPS for remote CouchDB instances
-- Restrict CORS origins in production environments
-- Consider firewall rules for CouchDB port (5984)
-
-### Docker Setup (Recommended for CouchDB)
-```bash
-# Complete Docker setup for CouchDB
-sudo pacman -S docker docker-compose
-sudo systemctl start docker
-sudo systemctl enable docker
-sudo usermod -aG docker $USER  # Add user to docker group
-newgrp docker  # Refresh group membership
-
-# Alternative: Docker Compose setup
-# Create docker-compose.yml:
-version: '3.8'
-services:
-  couchdb:
-    image: couchdb:3.3
-    container_name: fintrac-couchdb
-    ports:
-      - "5984:5984"
-    environment:
-      - COUCHDB_USER=admin
-      - COUCHDB_PASSWORD=password
-    volumes:
-      - couchdb-data:/opt/couchdb/data
-    restart: unless-stopped
-volumes:
-  couchdb-data:
-
-# Then run:
-docker-compose up -d
-```
-
-### Manual CouchDB Installation
-```bash
-# Arch Linux
-sudo pacman -S couchdb
-
-# Ubuntu/Debian
-sudo apt-get install couchdb
-
-# Configure and start
-sudo systemctl start couchdb
-sudo systemctl enable couchdb
-```
-
-### IDE Recommendations
-- **Zed Editor** (Integration with GitHub Copilot was used in development)
-- **OpenCode CLI** was used to scaffold initial files and folders during development
-
-### Troubleshooting CouchDB Setup
-
-**Common Issues:**
-
-1. **CORS Errors**
-   ```bash
-   # Verify CORS is enabled
-   curl http://localhost:5984/_node/_local/_config/httpd/enable_cors
-   # Should return: "true"
-   ```
-
-2. **Authentication Failures**
-   ```bash
-   # Test admin credentials
-   curl -u admin:password http://localhost:5984/_session
-   # Should return user session info
-   ```
-
-3. **Database Access Issues**
-   ```bash
-   # Check if database exists
-   curl http://admin:password@localhost:5984/fintrac
-   # Should return database info or 404 if not created
-   ```
-
-4. **Connection Issues**
-   ```bash
-   # Test CouchDB is running
-   curl http://localhost:5984/
-   # Should return CouchDB welcome message
-   ```
-
-**Docker-specific Issues:**
-```bash
-# Check container status
-docker ps
-docker logs fintrac-couchdb
-
-# Restart container if needed
-docker restart fintrac-couchdb
-
-# Access container for debugging
-docker exec -it fintrac-couchdb bash
-```
-
-## Technical Foundation
-
-### Project Structure
-
+### Directory Structure
 ```bash
 fin-trac/
 ├── src/
@@ -475,99 +361,9 @@ fin-trac/
 └── coverage/              # Test coverage reports
 ```
 
-### Data Flow & State Management
+### Data Schema
 
-**Request Flow:**
-```
-User Interaction → React Component → Custom Hook → Repository → PouchDB → IndexedDB
-```
-
-**Sync Flow:**
-```
-Local Changes → Change Detection → Conflict Resolution → CouchDB Sync → Remote Storage
-```
-
-**System Boundaries:**
-- **Frontend-only architecture** - No backend server required
-- **Progressive Web App** - Installable, offline-capable
-- **Local-first storage** - IndexedDB via PouchDB
-- **Optional cloud sync** - CouchDB for multi-device access
-
-<br>
-
-## Performance & Optimization
-
-### Bundle Size Optimization
-- **Tree shaking** enabled via Vite
-- **Code splitting** by feature modules
-- **Lazy loading** for chart components
-- **Minimal dependencies** - focused technology stack
-
-### Runtime Performance
-- **Virtual DOM** optimization through React 18
-- **Memo hooks** for expensive calculations
-- **IndexedDB** for fast local data access
-- **Debounced search** and filtering
-
-### Offline Capabilities
-- **Service Worker** registration for PWA functionality
-- **Cache-first strategy** for static assets
-- **Local data persistence** with conflict resolution
-- **Graceful degradation** when offline
-
-## AI-Assisted Development Process
-
-### Code Generation & Scaffolding
-- **Component generation**: React components with TypeScript interfaces
-- **Hook creation**: Custom hooks with proper dependency arrays
-- **Repository patterns**: CRUD operations with error handling
-- **Test scaffolding**: Unit and integration test boilerplate
-- **Type definitions**: Schema-aware TypeScript interfaces
-
-### AI-Enhanced Development Workflow
-1. **Planning**: AI-assisted architecture decisions and feature breakdown
-2. **Implementation**: Code generation with context-aware suggestions
-3. **Testing**: Automated test case generation and edge case identification
-4. **Documentation**: Living documentation that evolves with code changes
-5. **Debugging**: AI-powered error analysis and solution recommendations
-
-### Tools Used
-- **Zed Editor** with Claude integration for in-IDE assistance
-- **Claude CLI** for command-line development tasks
-- **Schema-aware generation** for TypeScript and database models
-- **Context-driven prompts** for maintaining code consistency
-
-<br>
-
-## Contributing
-
-### Development Guidelines
-1. **Follow the established architecture** patterns outlined in `AGENTS.md`
-2. **Write tests** for new features and bug fixes
-3. **Use TypeScript strictly** - no `any` types
-4. **Follow feature-based organization** for new modules
-5. **Maintain AI-assisted development** practices
-
-### Code Quality Standards
-- **ESLint configuration** for consistent code style
-- **Prettier formatting** for automated code formatting
-- **TypeScript strict mode** for type safety
-- **Test coverage** requirements for critical business logic
-- **Conventional commits** for clear version history
-
-### Getting Started with Development
-1. **Read the project specification** in this README
-2. **Review the architecture rules** in `AGENTS.md`
-3. **Run the test suite** to ensure setup is correct
-4. **Start with small changes** to understand the codebase
-5. **Use AI tools** for scaffolding and assistance
-
-<br>
-
-## Data Schema & Models
-
-**Transactions**
-
+**Transaction Model**
 ```ts
 {
   id: string;
@@ -583,8 +379,7 @@ Local Changes → Change Detection → Conflict Resolution → CouchDB Sync → 
 }
 ```
 
-**Categories (preset + user-defined)**
-
+**Category Model**
 ```ts
 {
   id: string;
@@ -593,7 +388,150 @@ Local Changes → Change Detection → Conflict Resolution → CouchDB Sync → 
 }
 ```
 
-<br>
+## Architecture & Design Patterns
+
+### Local-First Approach
+FinTrac prioritizes local data storage and offline functionality:
+- All user data remains on device by default
+- Sync is optional and user-controlled
+- No external dependencies for core functionality
+- Privacy-by-design architecture
+
+### Data Flow Architecture
+```
+UI Components → Custom Hooks → Repository Layer → PouchDB → IndexedDB
+                                      ↓
+                              CouchDB Sync Service → Remote CouchDB
+```
+
+### Component Architecture
+- **Feature-based organization** with clear separation of concerns
+- **Custom hooks** for state management and business logic
+- **Repository pattern** for data access abstraction
+- **Service layer** for external integrations and utilities
+
+### System Boundaries
+- **Frontend-only architecture** - No backend server required
+- **Progressive Web App** - Installable, offline-capable
+- **Local-first storage** - IndexedDB via PouchDB
+- **Optional cloud sync** - CouchDB for multi-device access
+
+### Performance & Optimization
+- **Tree shaking** enabled via Vite
+- **Code splitting** by feature modules
+- **Lazy loading** for chart components
+- **Virtual DOM** optimization through React 18
+- **IndexedDB** for fast local data access
+- **Service Worker** registration for PWA functionality
+
+## Development Environment
+
+### System Requirements
+- **Operating System**: Linux (development tested on Arch Linux)
+- **Node.js**: Version 18 or higher
+- **Package Manager**: npm (included with Node.js)
+- **Browser**: Modern browser with IndexedDB support
+
+### Testing
+
+This project uses Vitest as the testing framework, integrated with React Testing Library for component and hook testing.
+
+#### Running Tests
+
+```bash
+# Run tests in watch mode
+npm test
+
+# Run tests once
+npm run test:run
+
+# Generate coverage report
+npm run test:coverage
+```
+
+#### Test Structure
+
+Tests are co-located with the code they test, following the pattern `ComponentName.test.tsx` or `utilityName.test.ts`:
+
+- **Unit Tests**: Utilities, repositories, hooks
+- **Integration Tests**: Components, user flows
+
+#### Writing Tests
+
+For utility functions:
+```typescript
+import { describe, it, expect } from 'vitest';
+import { formatCurrency } from './currencyUtils';
+
+describe('formatCurrency', () => {
+  it('formats amount with default currency', () => {
+    expect(formatCurrency(1000)).toBe('$1,000.00');
+  });
+});
+```
+
+For React components:
+```typescript
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { TransactionForm } from './TransactionForm';
+
+describe('TransactionForm', () => {
+  it('renders form fields', () => {
+    render(<TransactionForm addTransaction={mockFn} />);
+    expect(screen.getByPlaceholderText('Description')).toBeInTheDocument();
+  });
+});
+```
+
+### Advanced Setup Options
+
+**For detailed CouchDB troubleshooting, alternative installation methods, or production deployment configurations, see the full setup guide in the Quick Start section above.**
+
+#### Troubleshooting
+
+**CORS Errors:**
+```bash
+# Verify CORS is enabled
+curl http://localhost:5984/_node/_local/_config/httpd/enable_cors
+# Should return: "true"
+```
+
+**Authentication Issues:**
+```bash
+# Test admin credentials
+curl -u admin:password http://localhost:5984/_session
+```
+
+**Connection Issues:**
+```bash
+# Test CouchDB is running
+curl http://localhost:5984/
+# Should return CouchDB welcome message
+```
+
+### Contributing
+
+#### Development Guidelines
+1. **Follow the established architecture** patterns outlined in `AGENTS.md`
+2. **Write tests** for new features and bug fixes
+3. **Use TypeScript strictly** - no `any` types
+4. **Follow feature-based organization** for new modules
+5. **Maintain AI-assisted development** practices
+
+#### Code Quality Standards
+- **ESLint configuration** for consistent code style
+- **Prettier formatting** for automated code formatting
+- **TypeScript strict mode** for type safety
+- **Test coverage** requirements for critical business logic
+- **Conventional commits** for clear version history
+
+#### Getting Started with Development
+1. **Read this README** for project understanding
+2. **Review the architecture rules** in `AGENTS.md`
+3. **Run the test suite** to ensure setup is correct
+4. **Start with small changes** to understand the codebase
+5. **Use AI tools** for scaffolding and assistance
 
 ## Deployment & Production
 
@@ -616,6 +554,43 @@ Generates optimized static files in the `dist/` directory.
 - **Optional CouchDB URL** for sync features (configured in-app)
 - **PWA manifest** and service worker included
 
+## Project Goals & AI Integration
+
+FinTrac is a capstone project for the AI for Developers II program that demonstrates practical application of AI-assisted development practices. The application serves as a privacy-friendly, local-first personal finance dashboard.
+
+### Primary Objectives
+- Apply AI-assisted development workflows in a real-world project
+- Demonstrate schema-aware coding and automated review processes
+- Showcase effective use of in-IDE AI tooling
+- Build a functional, user-friendly finance tracking application
+
+### AI Integration in Development
+- **Planning & Architecture**: AI-assisted project structure and technical decisions
+- **Code Generation**: Automated React component and TypeScript interface creation
+- **Testing**: AI-generated test suites and edge case identification
+- **Documentation**: Living documentation maintained with AI assistance
+- **Debugging**: AI-powered error analysis and resolution suggestions
+
+### Tools Used
+- **Zed Editor** with integration with GitHub Copilot for in-IDE assistance
+- **OpenCode CLI** for scaffolding initial base project files and folders
+- **context7 MCP** for context-aware code generation
+- **Context-driven prompts** for maintaining code consistency
+
+### User Experience Focus
+
+**Target Users:**
+- **Individuals** seeking simple, private expense tracking
+- **Privacy-conscious users** who prefer local data storage
+- **Users** wanting offline-capable financial tools
+- **Multi-device users** requiring optional cloud synchronization
+
+**Key User Flows:**
+1. **Quick Transaction Entry**: Add expense/income in under 30 seconds
+2. **Visual Insights**: View spending patterns through interactive charts
+3. **Data Management**: Edit, delete, and categorize transactions
+4. **Sync Setup**: Optional CouchDB configuration for multi-device access
+
 ## Project Deliverables
 
 ### ✅ Completed Deliverables
@@ -637,201 +612,6 @@ Generates optimized static files in the `dist/` directory.
    - Inline code comments and type definitions
    - AI tool integration examples and workflows
 
-4. **Live Deployment**
-   - Hosted on Vercel with automatic deployments
-   - PWA installable on mobile and desktop
-   - Performance optimized for fast loading
-   - Privacy-focused with local-first data storage
+---
 
-<br>
-
-## 9. Testing
-
-This project uses Vitest as the testing framework, integrated with React Testing Library for component and hook testing. The test suite includes unit tests for utilities, repositories, hooks, and integration tests for components to ensure code quality and prevent regressions.
-
-### Running Tests
-
-#### Prerequisites
-Ensure all dependencies are installed:
-```bash
-npm install
-```
-
-#### Run All Tests
-Execute the full test suite:
-```bash
-npm test
-```
-This runs tests in watch mode, re-running on file changes.
-
-#### Run Tests Once
-Run all tests once without watch mode:
-```bash
-npm run test:run
-```
-
-#### Generate Coverage Report
-Run tests with coverage analysis:
-```bash
-npm run test:coverage
-```
-This generates a coverage report in the `coverage/` directory.
-
-### Test Structure
-
-Tests are co-located with the code they test, following the pattern `ComponentName.test.tsx` or `utilityName.test.ts`. The test files are organized as follows:
-
-- **Unit Tests:**
-  - `src/services/utils/currencyUtils.test.ts` - Currency formatting and parsing
-  - `src/services/utils/dateUtils.test.ts` - Date formatting utilities
-  - `src/services/repos/TransactionRepository.test.ts` - Database repository operations
-  - `src/hooks/useCategories.test.tsx` - Category state management hook
-  - `src/features/dashboard/hooks/useDashboardData.test.tsx` - Dashboard data processing hook
-
-- **Integration Tests:**
-  - `src/features/transactions/components/TransactionForm.test.tsx` - Form submission and validation
-  - `src/features/dashboard/components/DashboardChart.test.tsx` - Chart rendering and data visualization
-
-### Adding New Tests
-
-#### 1. Test File Naming Convention
-Create test files with the `.test.tsx` extension for React components/hooks or `.test.ts` for utilities/repositories. Place them in the same directory as the code being tested.
-
-#### 2. Test Setup
-All tests use the setup configured in `src/test/setup.ts`, which includes:
-- Jest DOM matchers for DOM assertions
-- jsdom environment for browser simulation
-
-#### 3. Writing Unit Tests
-
-For utility functions (e.g., adding a test to `currencyUtils.test.ts`):
-
-```typescript
-import { describe, it, expect } from 'vitest';
-import { formatCurrency } from './currencyUtils';
-
-describe('formatCurrency', () => {
-  it('formats amount with default currency', () => {
-    expect(formatCurrency(1000)).toBe('$1,000.00');
-  });
-
-  it('handles edge cases', () => {
-    expect(formatCurrency(0)).toBe('$0.00');
-    expect(formatCurrency(-500)).toBe('-$500.00');
-  });
-});
-```
-
-For repository tests (e.g., `TransactionRepository.test.ts`):
-
-```typescript
-import { describe, it, expect, vi } from 'vitest';
-import { TransactionRepository } from './TransactionRepository';
-
-// Mock dependencies
-vi.mock('../db/db', () => ({
-  db: { transactions: { toArray: vi.fn() } }
-}));
-
-describe('TransactionRepository', () => {
-  it('retrieves all transactions', async () => {
-    // Arrange
-    const repo = new TransactionRepository();
-    // Mock setup
-
-    // Act
-    const result = await repo.getAll();
-
-    // Assert
-    expect(result).toEqual(expectedTransactions);
-  });
-});
-```
-
-#### 4. Writing Component Tests
-
-For React components (e.g., `TransactionForm.test.tsx`):
-
-```typescript
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { TransactionForm } from './TransactionForm';
-
-describe('TransactionForm', () => {
-  it('renders form fields', () => {
-    render(<TransactionForm addTransaction={mockFn} />);
-
-    expect(screen.getByPlaceholderText('Description')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Amount')).toBeInTheDocument();
-  });
-
-  it('submits valid form data', async () => {
-    const mockAddTransaction = vi.fn();
-    const user = userEvent.setup();
-
-    render(<TransactionForm addTransaction={mockAddTransaction} />);
-
-    await user.type(screen.getByPlaceholderText('Description'), 'Test transaction');
-    await user.type(screen.getByPlaceholderText('Amount'), '100');
-    await user.click(screen.getByRole('button', { name: 'Add Transaction' }));
-
-    expect(mockAddTransaction).toHaveBeenCalledWith({
-      description: 'Test transaction',
-      amount: 100,
-      // ... other expected fields
-    });
-  });
-});
-```
-
-#### 5. Writing Hook Tests
-
-For custom hooks (e.g., `useDashboardData.test.tsx`):
-
-```typescript
-import { describe, it, expect, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
-import { useDashboardData } from './useDashboardData';
-
-// Mock dependencies
-vi.mock('../hooks/useTransactions', () => ({
-  useTransactions: () => ({ transactions: mockTransactions })
-}));
-
-describe('useDashboardData', () => {
-  it('calculates balance correctly', () => {
-    const { result } = renderHook(() => useDashboardData());
-
-    expect(result.current.balance).toBe(expectedBalance);
-    expect(result.current.totalIncome).toBe(expectedIncome);
-  });
-});
-```
-
-#### 6. Mocking Strategy
-
-- **Database Operations:** Mock Dexie tables using `vi.mock()` to avoid actual IndexedDB interactions
-- **External Libraries:** Mock Recharts components for chart testing
-- **Hooks and Components:** Mock child components or hooks to isolate unit tests
-- **Async Operations:** Use `vi.fn().mockResolvedValue()` for promises
-
-#### 7. Best Practices
-
-- **Test Isolation:** Each test should be independent and not rely on shared state
-- **Descriptive Names:** Use clear, descriptive test names that explain what is being tested
-- **Edge Cases:** Include tests for error conditions, empty states, and boundary values
-- **Coverage:** Aim for high coverage of critical business logic and user interactions
-- **Performance:** Keep tests fast by mocking expensive operations
-
-#### 8. Running Tests in CI/CD
-
-For continuous integration, add the test command to your CI pipeline:
-
-```yaml
-# Example GitHub Actions
-- name: Run Tests
-  run: npm run test:run
-```
-
-The test suite serves as guardrails for development, ensuring that new features don't break existing functionality and that refactors maintain correctness.
+*Built with AI-assisted development practices as part of the AI for Developers II program. Demonstrates modern web development patterns, local-first architecture, and privacy-focused design.*
