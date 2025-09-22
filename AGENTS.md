@@ -93,6 +93,12 @@ Follow this scalable React App structure:
 - **Repositories**: Implement full CRUD operations (create, read, update, delete)
 - **Forms**: Use controlled components with validation
 - **Charts**: Use Recharts with responsive containers
+- **TypeScript Safety**: Before generating any TypeScript code, examine existing types, interfaces, and imports in the codebase
+- **Mock Strategy**: Use structured interfaces that match actual service contracts instead of `any` types
+- **Incremental Approach**: Generate code in small, compilable chunks rather than large complete implementations
+- **Type Verification**: Always check that generated code aligns with existing type patterns and strict TypeScript config
+- **Mock Naming**: Ensure mock method names exactly match the actual service/class method signatures
+- **Error Prevention**: When uncertain about types, ask for relevant interface definitions before proceeding
 
 ### Database Layer Rules
 - **All DB operations**: Go through repository layer, never direct Dexie calls in components

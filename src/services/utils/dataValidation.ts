@@ -117,6 +117,12 @@ export interface ComparisonResult {
 export function validateTransaction(transaction: Transaction): string[] {
   const errors: string[] = [];
 
+  // Handle null/undefined input
+  if (!transaction || typeof transaction !== "object") {
+    errors.push("Transaction is required and must be an object");
+    return errors;
+  }
+
   // Required fields validation
   if (!transaction.id || typeof transaction.id !== "string") {
     errors.push("Transaction ID is required and must be a string");
@@ -133,11 +139,21 @@ export function validateTransaction(transaction: Transaction): string[] {
       const date = new Date(transaction.date);
       if (isNaN(date.getTime())) {
         errors.push("Transaction date is not a valid date");
+      } else {
+        // Check if the date components match the input (catches cases like Feb 30th)
+        const [year, month, day] = transaction.date.split("-").map(Number);
+        if (
+          date.getFullYear() !== year ||
+          date.getMonth() !== month - 1 ||
+          date.getDate() !== day
+        ) {
+          errors.push("Transaction date is not a valid date");
+        }
       }
     }
   }
 
-  if (!transaction.description || typeof transaction.description !== "string") {
+  if (typeof transaction.description !== "string") {
     errors.push("Transaction description is required and must be a string");
   } else if (transaction.description.trim().length === 0) {
     errors.push("Transaction description cannot be empty");
@@ -181,7 +197,7 @@ export function validateTransaction(transaction: Transaction): string[] {
     errors.push("Transaction type must be either 'credit' or 'debit'");
   }
 
-  if (!transaction.category || typeof transaction.category !== "string") {
+  if (typeof transaction.category !== "string") {
     errors.push("Transaction category is required and must be a string");
   } else if (transaction.category.trim().length === 0) {
     errors.push("Transaction category cannot be empty");
@@ -289,6 +305,25 @@ export function validateTransactions(
   let invalidDates = 0;
   let invalidAmounts = 0;
 
+  // Handle null/undefined or non-array input
+  if (!transactions || !Array.isArray(transactions)) {
+    errors.push("Transactions must be an array");
+    return {
+      isValid: false,
+      errors,
+      warnings,
+      summary: {
+        totalTransactions: 0,
+        validTransactions: 0,
+        invalidTransactions: 0,
+        duplicateIds: 0,
+        missingFields: 0,
+        invalidDates: 0,
+        invalidAmounts: 0,
+      },
+    };
+  }
+
   // Check for duplicate IDs
   const idMap = new Map<string, number>();
   transactions.forEach((transaction, index) => {
@@ -320,7 +355,7 @@ export function validateTransactions(
 
       // Count specific error types for summary
       transactionErrors.forEach((error: string) => {
-        if (error.includes("required")) {
+        if (error.includes("required") || error.includes("cannot be empty")) {
           missingFields++;
         }
         if (error.includes("date")) {
@@ -351,7 +386,7 @@ export function validateTransactions(
   }
 
   const currencies = new Set(transactions.map((t) => t.currency));
-  if (currencies.size > 5) {
+  if (currencies.size > 1) {
     warnings.push("Multiple currencies detected - ensure proper handling");
   }
 
