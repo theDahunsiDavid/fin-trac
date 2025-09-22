@@ -337,7 +337,7 @@ If you've set up CouchDB sync:
 - **Multi-device Sync**
   - [x] Phase 1: One-way sync (upload local changes to CouchDB)
   - [x] Phase 2: Bidirectional sync (download remote changes)
-  - [-] Phase 3: Advanced conflict detection and resolution
+  - [ ] Phase 3: Advanced conflict detection and resolution
   - [ ] Phase 4: Real-time sync with WebSocket/SSE
   - [ ] Phase 5: Selective sync and optimization
 
