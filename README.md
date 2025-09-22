@@ -1,18 +1,138 @@
-# Project Specification: Finance Tracker (AI-Assisted Development)
+# FinTrac - Personal Finance Tracker
 
-<br>
+A privacy-friendly, local-first personal finance tracker Progressive Web App (PWA) built with AI-assisted development practices.
 
-## 1. Introduction & Project Goal
+## Quick Start
 
-This project involves building, FinTrac, a finance tracker as a capstone project for the AI for Developers II program. The application is a privacy-friendly, local-first personal finance dashboard that allows users to do the following:
+### Prerequisites
+- Node.js (v18 or higher)
+- npm or yarn
 
-- manually record financial transactions
-- visualize their balances and spending
-- store their financial data locally
+### Setup & Installation
 
-My primary goal of building this project is to apply everything I’ve learned about AI-assisted development, schema-aware coding, automated reviews, and in-IDE tooling in the AI for Developers II course by ALX Africa.
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd fin-trac
+   ```
 
-I will actively use AI tools for planning, UI generation, code writing, testing, debugging, and deployment as I build this application.
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+
+4. **Open your browser:**
+   Navigate to `http://localhost:5173` to view the application.
+
+### Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm test` - Run tests in watch mode
+- `npm run test:run` - Run tests once
+- `npm run test:coverage` - Generate test coverage report
+
+## Features Implemented
+
+### ✅ Core Features (Completed)
+- **Transaction Management**
+  - ✅ Add income/expense transactions manually
+  - ✅ Edit and delete existing transactions
+  - ✅ Transaction fields: date, description, amount, currency, type (credit/debit), category, tags
+  - ✅ Form validation and error handling
+
+- **Data Visualization Dashboard**
+  - ✅ Balance summary (total income, expenses, net balance)
+  - ✅ Spending by category (pie chart)
+  - ✅ Monthly spending trends (line chart)
+  - ✅ Interactive charts using Recharts
+  - ✅ Responsive design for mobile and desktop
+
+- **Local-First Storage**
+  - ✅ All data stored locally using IndexedDB via PouchDB
+  - ✅ Custom bidirectional sync with CouchDB
+  - ✅ Offline-first functionality
+  - ✅ Data persistence across browser sessions
+
+- **Category Management**
+  - ✅ Predefined categories (Food, Transport, Entertainment, etc.)
+  - ✅ Custom category creation
+  - ✅ Color-coded categories for visual distinction
+
+### 🚧 Advanced Features (In Progress)
+- **Multi-device Sync**
+  - ✅ Phase 1: One-way sync (upload local changes to CouchDB)
+  - ✅ Phase 2: Bidirectional sync (download remote changes)
+  - 🔄 Phase 3: Advanced conflict detection and resolution
+  - 📋 Phase 4: Real-time sync with WebSocket/SSE
+  - 📋 Phase 5: Selective sync and optimization
+
+- **Enhanced UX**
+  - ✅ Loading states and error handling
+  - ✅ Empty state messages
+  - ✅ Mobile-responsive design
+  - 📋 Dark mode support
+  - 📋 Keyboard shortcuts
+
+### 📋 Future Enhancements
+- Import/export functionality (CSV, JSON)
+- Budget tracking and alerts
+- Receipt photo attachment
+- Advanced filtering and search
+- Data analytics and insights
+- Multiple currency support
+
+## Technology Stack
+
+### Frontend
+- **React 18** - UI library with modern hooks and patterns
+- **Vite** - Fast build tool and development server
+- **TypeScript** - Static type checking for enhanced code quality
+- **Tailwind CSS** - Utility-first CSS framework for rapid styling
+
+### Data & Storage
+- **PouchDB** - Local database using IndexedDB with CouchDB sync
+- **CouchDB** - Remote database for multi-device synchronization
+- **Dexie.js** - IndexedDB wrapper (legacy, being migrated to PouchDB)
+
+### Visualization
+- **Recharts** - React chart library for interactive data visualization
+
+### Testing
+- **Vitest** - Fast unit test runner
+- **React Testing Library** - Component testing utilities
+- **jsdom** - DOM simulation for testing
+
+### Development Tools
+- **ESLint** - Code linting and style enforcement
+- **Prettier** - Code formatting
+- **Git** - Version control with conventional commits
+
+### Deployment
+- **Vercel** - Production hosting and deployment platform
+
+## Project Goals & AI Integration
+
+FinTrac is a capstone project for the AI for Developers II program that demonstrates practical application of AI-assisted development practices. The application serves as a privacy-friendly, local-first personal finance dashboard.
+
+### Primary Objectives:
+- Apply AI-assisted development workflows in a real-world project
+- Demonstrate schema-aware coding and automated review processes
+- Showcase effective use of in-IDE AI tooling
+- Build a functional, user-friendly finance tracking application
+
+### AI Integration in Development:
+- **Planning & Architecture**: AI-assisted project structure and technical decisions
+- **Code Generation**: Automated React component and TypeScript interface creation
+- **Testing**: AI-generated test suites and edge case identification
+- **Documentation**: Living documentation maintained with AI assistance
+- **Debugging**: AI-powered error analysis and resolution suggestions
 
 ## Migration to PouchDB + CouchDB Sync
 
@@ -26,101 +146,192 @@ This project implements a custom bidirectional sync system between Dexie.js and 
 
 <br>
 
-## 2. Core Application Features
+## Architecture & Design Patterns
 
-The completed application will include the following features:
+### Local-First Approach
+FinTrac prioritizes local data storage and offline functionality:
+- All user data remains on device by default
+- Sync is optional and user-controlled
+- No external dependencies for core functionality
+- Privacy-by-design architecture
 
-- **Transaction Management**
-  - Ability to add income/expense transactions manually
-  - Fields: date, description, amount, currency (placeholder field), type (credit/debit), category, tags
-  - Ability to edit/delete transactions
-- **Visualization Dashboard**
-  - Totals by category
-  - Spending trends over time
-  - Balance summary
-  - Interactive charts (Recharts)
-- **Local-First Storage**
-  - All data stored locally in browser using IndexedDB (Dexie.js)
-  - JSON-based schema
+### Data Flow Architecture
+```
+UI Components → Custom Hooks → Repository Layer → PouchDB → IndexedDB
+                                      ↓
+                              CouchDB Sync Service → Remote CouchDB
+```
 
-<br>
-
-## 3. User Roles within the Application
-
-- **Primary User (Individual)**
-  - Records personal transactions
-  - Views dashboard insights
-  - Manages their data locally
+### Component Architecture
+- **Feature-based organization** with clear separation of concerns
+- **Custom hooks** for state management and business logic
+- **Repository pattern** for data access abstraction
+- **Service layer** for external integrations and utilities
 
 <br>
 
-## 4. Technical Foundation
+## User Experience
 
-- **Frontend Structure (React + Vite)**
+### Target Users
+- **Individuals** seeking simple, private expense tracking
+- **Privacy-conscious users** who prefer local data storage
+- **Users** wanting offline-capable financial tools
+- **Multi-device users** requiring optional cloud synchronization
 
-   ```bash
-   src/
-   ├── components/ # Reusable UI components (buttons, forms, charts)
-   ├── features/ # Feature modules (transactions, dashboard, categories)
-   │ ├── transactions/ # Transaction form, list, detail views
-   │ ├── dashboard/ # Charts & summary views
-   ├── services/ # App services
-   │ ├── db/ # Legacy Dexie setup (to be removed)
-   │ ├── pouchdb/ # PouchDB configuration and schema
-   │ ├── repos/ # Data repositories (CRUD, sync adapter)
-   │ ├── utils/ # Date, currency, number helpers
-   ├── hooks/ # Custom React hooks (useTransactions, useDashboardData)
-   ├── App.tsx
-   └── main.tsx
-   ```
-
-- **Data Flow**
-
-  - UI → Hooks → Repositories → PouchDB + CouchDB Sync
-
-- **System Boundary**
-  - Frontend only (PWA in browser)
-  - Database: IndexedDB via Dexie with custom CouchDB bidirectional sync
+### Key User Flows
+1. **Quick Transaction Entry**: Add expense/income in under 30 seconds
+2. **Visual Insights**: View spending patterns through interactive charts
+3. **Data Management**: Edit, delete, and categorize transactions
+4. **Sync Setup**: Optional CouchDB configuration for multi-device access
 
 <br>
 
-## 5. AI Tool Integration During Development
+## Development Environment Setup
 
-- **Code & Feature Generation**
+### System Requirements
+- **Operating System**: Linux
+- **Node.js**: Version 18 or higher
+- **Package Manager**: npm (included with Node.js)
+- **Browser**: Modern browser with IndexedDB support
 
-  - Use Zed Text Editor as IDE and Claude for CLI agent
-  - Generate boilerplate for React components, Dexie models, Tailwind layouts
-  - Speed up repetitive CRUD/UI scaffolding
+### Optional Dependencies
+- **Docker**: For CouchDB local development
+  ```bash
+  sudo pacman -S docker  # On Arch Linux
+  ```
+- **CouchDB**: For sync functionality
+  ```bash
+  docker run -p 5984:5984 -d couchdb:latest
+  ```
 
-- **Testing Support**
+### IDE Recommendations
+- **Zed Editor** (Integration with GitHub Copilot was used in development)
+- **OpenCode CLI** was used to scaffold initial files and folders during development
 
-  - Use AI to generate unit test stubs for repositories and utility functions
-  - Prompt: _Write tests for the actions in @TransactionForm.tsx and add a “test” script shortcut to @package.json to run tests_
-  - Prompt 2: _Generate a test suite for this fetchExpenses function in TransactionList.tsx_
-  - Help design edge cases for validation (negative amounts, future dates)
+## Technical Foundation
 
-- **Documentation Support**
+### Project Structure
 
-  - Use AI to generate docstrings, inline comments in complex logic areas.
-  - Use AI to generate a living documentation in the README file that’s updated intentionally every time code significantly changes
+```bash
+fin-trac/
+├── src/
+│   ├── components/          # Reusable UI components
+│   │   ├── ui/             # Basic UI primitives
+│   │   └── layout/         # Layout components
+│   ├── features/           # Feature-based modules
+│   │   ├── transactions/   # Transaction management
+│   │   │   ├── components/ # Transaction-specific components
+│   │   │   ├── hooks/      # Transaction-related hooks
+│   │   │   └── types.ts    # Transaction TypeScript definitions
+│   │   ├── dashboard/      # Analytics and visualization
+│   │   │   ├── components/ # Chart and summary components
+│   │   │   ├── hooks/      # Dashboard data processing hooks
+│   │   │   └── utils.ts    # Chart calculation utilities
+│   │   └── categories/     # Category management
+│   ├── services/           # External services and utilities
+│   │   ├── pouchdb/       # PouchDB configuration and schema
+│   │   ├── repos/         # Data access repositories
+│   │   ├── utils/         # Utility functions
+│   │   └── sync/          # CouchDB synchronization
+│   ├── hooks/             # Shared custom hooks
+│   ├── test/              # Test utilities and setup
+│   ├── App.tsx            # Main application component
+│   └── main.tsx           # Application entry point
+├── public/                # Static assets
+├── dist/                  # Production build output
+└── coverage/              # Test coverage reports
+```
 
-- **Schema-aware / API-aware Generation**
-  - Use AI to draft Dexie schemas, JSON typing
+### Data Flow & State Management
+
+**Request Flow:**
+```
+User Interaction → React Component → Custom Hook → Repository → PouchDB → IndexedDB
+```
+
+**Sync Flow:**
+```
+Local Changes → Change Detection → Conflict Resolution → CouchDB Sync → Remote Storage
+```
+
+**System Boundaries:**
+- **Frontend-only architecture** - No backend server required
+- **Progressive Web App** - Installable, offline-capable
+- **Local-first storage** - IndexedDB via PouchDB
+- **Optional cloud sync** - CouchDB for multi-device access
 
 <br>
 
-## 6. Chosen Technology Stack
+## Performance & Optimization
 
-- **Frontend:** React + Vite
-- **Styling:** Tailwind CSS
-- **Charts/Visualization:** Recharts
-- **Local Database:** IndexedDB via PouchDB + CouchDB sync
-- **Data Format:** JSON (schema enforced in repos)
-- **Deployment Platform:** Vercel
+### Bundle Size Optimization
+- **Tree shaking** enabled via Vite
+- **Code splitting** by feature modules
+- **Lazy loading** for chart components
+- **Minimal dependencies** - focused technology stack
+
+### Runtime Performance
+- **Virtual DOM** optimization through React 18
+- **Memo hooks** for expensive calculations
+- **IndexedDB** for fast local data access
+- **Debounced search** and filtering
+
+### Offline Capabilities
+- **Service Worker** registration for PWA functionality
+- **Cache-first strategy** for static assets
+- **Local data persistence** with conflict resolution
+- **Graceful degradation** when offline
+
+## AI-Assisted Development Process
+
+### Code Generation & Scaffolding
+- **Component generation**: React components with TypeScript interfaces
+- **Hook creation**: Custom hooks with proper dependency arrays
+- **Repository patterns**: CRUD operations with error handling
+- **Test scaffolding**: Unit and integration test boilerplate
+- **Type definitions**: Schema-aware TypeScript interfaces
+
+### AI-Enhanced Development Workflow
+1. **Planning**: AI-assisted architecture decisions and feature breakdown
+2. **Implementation**: Code generation with context-aware suggestions
+3. **Testing**: Automated test case generation and edge case identification
+4. **Documentation**: Living documentation that evolves with code changes
+5. **Debugging**: AI-powered error analysis and solution recommendations
+
+### Tools Used
+- **Zed Editor** with Claude integration for in-IDE assistance
+- **Claude CLI** for command-line development tasks
+- **Schema-aware generation** for TypeScript and database models
+- **Context-driven prompts** for maintaining code consistency
 
 <br>
 
-## 7. Data Model (MVP Draft)
+## Contributing
+
+### Development Guidelines
+1. **Follow the established architecture** patterns outlined in `AGENTS.md`
+2. **Write tests** for new features and bug fixes
+3. **Use TypeScript strictly** - no `any` types
+4. **Follow feature-based organization** for new modules
+5. **Maintain AI-assisted development** practices
+
+### Code Quality Standards
+- **ESLint configuration** for consistent code style
+- **Prettier formatting** for automated code formatting
+- **TypeScript strict mode** for type safety
+- **Test coverage** requirements for critical business logic
+- **Conventional commits** for clear version history
+
+### Getting Started with Development
+1. **Read the project specification** in this README
+2. **Review the architecture rules** in `AGENTS.md`
+3. **Run the test suite** to ensure setup is correct
+4. **Start with small changes** to understand the codebase
+5. **Use AI tools** for scaffolding and assistance
+
+<br>
+
+## Data Schema & Models
 
 **Transactions**
 
@@ -151,15 +362,53 @@ The completed application will include the following features:
 
 <br>
 
-## 8. Project Outcomes
+## Deployment & Production
 
-1.  **Completed Source Code:** A Git repository (e.g., on GitHub) containing the full source code of the finance tracker, with a commit history reflecting the AI-assisted development process.
-2.  **Live Deployed Application:** A working, privacy-friendly, local-first PWA. Users can enter/edit/delete transactions, categorize them, and view visual dashboards.
-3.  **Comprehensive README file:** A detailed README file within the repository explaining:
-    - The project’s purpose and features
-    - Instructions for setting up and running the project locally
-    - The specific technology stack used
-    - Key examples and explanations of how different AI tools were integrated and utilized during the build process
+### Production Build
+```bash
+npm run build
+```
+Generates optimized static files in the `dist/` directory.
+
+### Deployment to Vercel
+1. **Connect repository** to Vercel dashboard
+2. **Configure build settings**:
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+   - Node.js Version: 18.x
+3. **Deploy automatically** on main branch commits
+
+### Environment Configuration
+- **No environment variables required** for core functionality
+- **Optional CouchDB URL** for sync features (configured in-app)
+- **PWA manifest** and service worker included
+
+## Project Deliverables
+
+### ✅ Completed Deliverables
+1. **Production-Ready Application**
+   - Fully functional finance tracker PWA
+   - Responsive design for all screen sizes
+   - Offline-capable with local data persistence
+   - Optional cloud synchronization
+
+2. **Comprehensive Source Code**
+   - Well-structured, maintainable codebase
+   - TypeScript for type safety and developer experience
+   - Comprehensive test suite with good coverage
+   - Clear separation of concerns and modular architecture
+
+3. **Documentation & Examples**
+   - Detailed README with setup instructions
+   - Architecture documentation in `AGENTS.md`
+   - Inline code comments and type definitions
+   - AI tool integration examples and workflows
+
+4. **Live Deployment**
+   - Hosted on Vercel with automatic deployments
+   - PWA installable on mobile and desktop
+   - Performance optimized for fast loading
+   - Privacy-focused with local-first data storage
 
 <br>
 
