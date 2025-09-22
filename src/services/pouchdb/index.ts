@@ -31,7 +31,7 @@ export {
   createRemoteDB,
   POUCHDB_CONFIG,
   REMOTE_COUCHDB_CONFIG,
-  PouchDB,
+  getPouchDB,
   type Database,
 } from "./config";
 

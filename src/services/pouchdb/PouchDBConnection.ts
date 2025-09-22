@@ -32,7 +32,7 @@ export class PouchDBConnection {
     }
 
     return this.connectWithRetry(async () => {
-      this.localDB = createLocalDB();
+      this.localDB = await createLocalDB();
       console.log("PouchDB local connection established");
       return this.localDB;
     }, "local");
@@ -51,7 +51,7 @@ export class PouchDBConnection {
     }
 
     return this.connectWithRetry(async () => {
-      this.remoteDB = createRemoteDB();
+      this.remoteDB = await createRemoteDB();
       console.log("PouchDB remote connection established");
       return this.remoteDB;
     }, "remote");
@@ -105,12 +105,14 @@ export class PouchDBConnection {
   async disconnect(): Promise<void> {
     try {
       if (this.localDB) {
-        await this.localDB.close();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (this.localDB as any).close();
         this.localDB = null;
       }
 
       if (this.remoteDB) {
-        await this.remoteDB.close();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (this.remoteDB as any).close();
         this.remoteDB = null;
       }
 
@@ -157,7 +159,8 @@ export class PouchDBConnection {
   async testLocalConnection(): Promise<boolean> {
     try {
       const db = await this.getLocalDB();
-      await db.info();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (db as any).info();
       return true;
     } catch (error) {
       console.error("Local PouchDB connection test failed:", error);
@@ -173,7 +176,8 @@ export class PouchDBConnection {
   async testRemoteConnection(): Promise<boolean> {
     try {
       const db = await this.getRemoteDB();
-      await db.info();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (db as any).info();
       return true;
     } catch (error) {
       console.error("Remote PouchDB connection test failed:", error);

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { pouchDBConnection } from "./PouchDBConnection";
 import type { Database } from "./config";
 import { verifyPouchDBSetup } from "./init";
@@ -114,7 +115,7 @@ export abstract class BasePouchRepository<T> {
   protected async resolveConflict(docId: string): Promise<unknown> {
     try {
       const db = await this.getDB();
-      const doc = await db.get(docId, { conflicts: true });
+      const doc = await (db as any).get(docId, { conflicts: true });
 
       if (doc._conflicts) {
         console.warn(
@@ -147,7 +148,7 @@ export abstract class BasePouchRepository<T> {
   ): Promise<void> {
     try {
       const db = await this.getDB();
-      await db.createIndex({ index });
+      await (db as any).createIndex({ index });
       console.log(`Index "${indexName}" ensured`);
     } catch (error: unknown) {
       // Index might already exist, which is okay
@@ -198,7 +199,7 @@ export abstract class BasePouchRepository<T> {
   ): Promise<T[]> {
     return this.executeWithErrorHandling(async () => {
       const db = await this.getDB();
-      const result = await db.allDocs({
+      const result = await (db as any).allDocs({
         include_docs: true,
         startkey,
         endkey,
@@ -206,9 +207,12 @@ export abstract class BasePouchRepository<T> {
 
       return result.rows
         .filter(
-          (row) => row.doc && !(row.doc as { _deleted?: boolean })._deleted,
+          (row: { doc?: unknown; _deleted?: boolean }) =>
+            row.doc && !(row.doc as { _deleted?: boolean })._deleted,
         )
-        .map((row) => this.convertToAppModel(row.doc! as unknown));
+        .map((row: { doc: unknown }) =>
+          this.convertToAppModel(row.doc! as unknown),
+        );
     }, "getAllByKeyRange");
   }
 
@@ -222,7 +226,7 @@ export abstract class BasePouchRepository<T> {
     return this.executeWithErrorHandling(async () => {
       const db = await this.getDB();
       try {
-        const doc = await db.get(id);
+        const doc = await (db as any).get(id);
         return this.convertToAppModel(doc as unknown);
       } catch (error: unknown) {
         if ((error as { name?: string }).name === "not_found") {
@@ -244,7 +248,7 @@ export abstract class BasePouchRepository<T> {
       this.validateDocument(model);
       const db = await this.getDB();
       const doc = this.convertToPouchDoc(model);
-      await db.put(doc as never);
+      await (db as any).put(doc as never);
     }, "createDocument");
   }
 
@@ -264,14 +268,14 @@ export abstract class BasePouchRepository<T> {
       const db = await this.getDB();
 
       // Get current document to preserve _rev
-      const existingDoc = await db.get(id);
+      const existingDoc = await (db as any).get(id);
       const updatedDoc = {
         ...existingDoc,
         ...updates,
         updatedAt: new Date().toISOString(),
       };
 
-      await db.put(updatedDoc);
+      await (db as any).put(updatedDoc);
     }, "updateDocument");
   }
 
@@ -285,8 +289,8 @@ export abstract class BasePouchRepository<T> {
     return this.executeWithErrorHandling(async () => {
       const db = await this.getDB();
       try {
-        const doc = await db.get(id);
-        await db.remove(doc);
+        const doc = await (db as any).get(id);
+        await (db as any).remove(doc);
       } catch (error: unknown) {
         if ((error as { name?: string }).name === "not_found") {
           // Document already doesn't exist, which is fine
@@ -318,7 +322,9 @@ export abstract class BasePouchRepository<T> {
       if (sort) findOptions.sort = sort;
       if (limit) findOptions.limit = limit;
 
-      const result = (await db.find(findOptions as never)) as FindResult;
+      const result = (await (db as any).find(
+        findOptions as never,
+      )) as FindResult;
       return result.docs.map((doc: PouchDocument) =>
         this.convertToAppModel(doc as unknown),
       );
@@ -333,7 +339,7 @@ export abstract class BasePouchRepository<T> {
   async getDatabaseInfo(): Promise<unknown> {
     return this.executeWithErrorHandling(async () => {
       const db = await this.getDB();
-      return await db.info();
+      return await (db as any).info();
     }, "getDatabaseInfo");
   }
 }

@@ -1,7 +1,14 @@
 import type { ITransactionRepository } from "./ITransactionRepository";
 import type { ICategoryRepository } from "./ICategoryRepository";
 import { TransactionRepository } from "./TransactionRepository";
-// import { PouchDBTransactionRepository } from "./PouchDBTransactionRepository";
+import { PouchDBTransactionRepository } from "./PouchDBTransactionRepository";
+import {
+  getSyncService,
+  destroySyncService,
+  isSyncAvailable,
+  type SyncService,
+} from "../pouchdb/syncService";
+import { SyncStatus, type SyncEvent } from "../pouchdb/config";
 
 /**
  * Repository Factory for switching between different database implementations
@@ -30,13 +37,11 @@ export class RepositoryFactory {
     if (this._implementation === null) {
       // Check environment variable
       const usePouchDB = import.meta.env.VITE_USE_POUCHDB === "true";
-      // Force Dexie for now since PouchDB is temporarily disabled
-      this._implementation = "dexie";
-      if (usePouchDB) {
-        console.warn(
-          "PouchDB requested but temporarily disabled. Using Dexie instead.",
-        );
-      }
+      this._implementation = usePouchDB ? "pouchdb" : "dexie";
+
+      console.log(
+        `Repository implementation: ${this._implementation} (VITE_USE_POUCHDB=${usePouchDB})`,
+      );
     }
     return this._implementation;
   }
@@ -60,8 +65,7 @@ export class RepositoryFactory {
 
       switch (implementation) {
         case "pouchdb":
-          console.warn("PouchDB temporarily disabled. Falling back to Dexie.");
-          this._transactionRepository = new TransactionRepository();
+          this._transactionRepository = new PouchDBTransactionRepository(true);
           break;
         case "dexie":
         default:
@@ -235,6 +239,127 @@ export class RepositoryFactory {
       errors.push(`Migration failed: ${error}`);
       return { success: false, migratedTransactions, errors };
     }
+  }
+
+  /**
+   * Get sync service for PouchDB implementation
+   */
+  static getSyncService(): SyncService | null {
+    const implementation = this.getImplementation();
+    if (implementation !== "pouchdb") {
+      return null;
+    }
+
+    return getSyncService();
+  }
+
+  /**
+   * Check if sync is available and enabled
+   */
+  static async isSyncAvailable(): Promise<boolean> {
+    const implementation = this.getImplementation();
+    if (implementation !== "pouchdb") {
+      return false;
+    }
+
+    return await isSyncAvailable();
+  }
+
+  /**
+   * Get sync status and statistics
+   */
+  static getSyncStatus(): {
+    implementation: DatabaseImplementation;
+    syncEnabled: boolean;
+    syncAvailable: boolean;
+    status?: SyncStatus;
+    stats?: {
+      docsRead: number;
+      docsWritten: number;
+      pending: number;
+      lastSync?: Date;
+      status: SyncStatus;
+    };
+  } {
+    const implementation = this.getImplementation();
+    const syncService = this.getSyncService();
+
+    if (implementation !== "pouchdb" || !syncService) {
+      return {
+        implementation,
+        syncEnabled: false,
+        syncAvailable: false,
+      };
+    }
+
+    const state = syncService.getState();
+    const stats = syncService.getSyncStats();
+
+    return {
+      implementation,
+      syncEnabled: true,
+      syncAvailable: true,
+      status: state.status,
+      stats,
+    };
+  }
+
+  /**
+   * Start sync for PouchDB implementation
+   */
+  static async startSync(options?: {
+    live?: boolean;
+    retry?: boolean;
+  }): Promise<void> {
+    const syncService = this.getSyncService();
+    if (!syncService) {
+      throw new Error("Sync is only available with PouchDB implementation");
+    }
+
+    await syncService.startSync(options);
+  }
+
+  /**
+   * Stop sync for PouchDB implementation
+   */
+  static stopSync(): void {
+    const syncService = this.getSyncService();
+    if (syncService) {
+      syncService.stopSync();
+    }
+  }
+
+  /**
+   * Force a manual sync
+   */
+  static async forceSync(): Promise<void> {
+    const syncService = this.getSyncService();
+    if (!syncService) {
+      throw new Error("Sync is only available with PouchDB implementation");
+    }
+
+    await syncService.forcSync();
+  }
+
+  /**
+   * Subscribe to sync events
+   */
+  static onSyncEvent(
+    listener: (event: SyncEvent) => void,
+  ): (() => void) | null {
+    const syncService = this.getSyncService();
+    if (!syncService) {
+      return null;
+    }
+
+    return syncService.onSyncEvent(listener);
+  }
+
+  /**
+   * Destroy sync service and clean up resources
+   */
+  static async destroySync(): Promise<void> {
+    await destroySyncService();
   }
 }
 

@@ -2,6 +2,8 @@ import { useState } from "react";
 import { TransactionModal } from "./features/transactions";
 import { DashboardChart } from "./features/dashboard";
 import { Header, SummaryCard } from "./components";
+
+import SyncControls from "./components/SyncControls";
 import { useTransactions } from "./features/transactions/hooks/useTransactions";
 import type { Transaction } from "./features/transactions/types";
 
@@ -88,6 +90,11 @@ function App() {
           onInflowClick={handleInflowClick}
           onSpendClick={handleSpendClick}
         />
+
+        {/* CouchDB Sync Components */}
+        <div className="mb-6">
+          <SyncControls showAdvanced={true} />
+        </div>
 
         <main className="space-y-8">
           <section>

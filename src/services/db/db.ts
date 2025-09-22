@@ -44,7 +44,7 @@ export class FinTracDB extends Dexie {
     super("FinTracDB");
     this.version(1).stores({
       transactions: "id, date, type, category, updatedAt",
-      categories: "id, name",
+      categories: "id, name, updatedAt",
     });
   }
 }

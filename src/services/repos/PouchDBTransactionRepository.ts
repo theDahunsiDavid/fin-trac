@@ -1,4 +1,5 @@
-import { createLocalDB } from "../pouchdb/config";
+import { createLocalDB, SyncStatus } from "../pouchdb/config";
+import { getSyncService, type SyncService } from "../pouchdb/syncService";
 import type { Transaction } from "../../features/transactions/types";
 import type { ITransactionRepository } from "./ITransactionRepository";
 
@@ -7,6 +8,16 @@ interface PouchDBDocument extends Transaction {
   _id: string;
   _rev?: string;
 }
+
+// Conflict resolution strategies
+export const ConflictResolution = {
+  LAST_WRITE_WINS: "last_write_wins",
+  MERGE_CHANGES: "merge_changes",
+  MANUAL_RESOLUTION: "manual_resolution",
+} as const;
+
+export type ConflictResolution =
+  (typeof ConflictResolution)[keyof typeof ConflictResolution];
 
 /**
  * PouchDB implementation of Transaction Repository
@@ -18,10 +29,41 @@ interface PouchDBDocument extends Transaction {
  */
 export class PouchDBTransactionRepository implements ITransactionRepository {
   private db: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  private syncService: SyncService | undefined;
+  private conflictResolution: ConflictResolution =
+    ConflictResolution.LAST_WRITE_WINS;
+  private initialized = false;
+  private initPromise: Promise<void> | null = null;
 
-  constructor() {
-    this.db = createLocalDB();
-    this.initializeIndexes();
+  constructor(enableSync = true) {
+    this.initPromise = this.initialize(enableSync);
+  }
+
+  /**
+   * Initialize the database and sync service asynchronously
+   */
+  private async initialize(enableSync: boolean): Promise<void> {
+    if (this.initialized) return;
+
+    this.db = await createLocalDB();
+    await this.initializeIndexes();
+
+    // Initialize sync service if enabled
+    if (enableSync) {
+      this.syncService = getSyncService({ enableSync: true });
+      this.setupConflictHandlers();
+    }
+
+    this.initialized = true;
+  }
+
+  /**
+   * Ensure the repository is initialized before any operation
+   */
+  private async ensureInitialized(): Promise<void> {
+    if (this.initPromise) {
+      await this.initPromise;
+    }
   }
 
   /**
@@ -64,6 +106,7 @@ export class PouchDBTransactionRepository implements ITransactionRepository {
   async create(
     transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt">,
   ): Promise<Transaction> {
+    await this.ensureInitialized();
     const now = new Date().toISOString();
     const newTransaction: Transaction = {
       ...transaction,
@@ -78,14 +121,23 @@ export class PouchDBTransactionRepository implements ITransactionRepository {
       ...newTransaction,
     };
 
-    await this.db.put(doc);
-    return newTransaction;
+    try {
+      await this.db.put(doc);
+      return newTransaction;
+    } catch (error) {
+      // Handle conflicts during creation
+      if (this.isConflictError(error)) {
+        return await this.resolveConflictOnCreate(doc, newTransaction);
+      }
+      throw error;
+    }
   }
 
   /**
    * Retrieves all transactions from the database, ordered by date (newest first).
    */
   async getAll(): Promise<Transaction[]> {
+    await this.ensureInitialized();
     try {
       const result = await this.db.find({
         selector: {},
@@ -118,6 +170,7 @@ export class PouchDBTransactionRepository implements ITransactionRepository {
    * Retrieves a transaction by its ID.
    */
   async getById(id: string): Promise<Transaction | undefined> {
+    await this.ensureInitialized();
     try {
       const doc = await this.db.get(id);
       return this.mapDocToTransaction(doc as PouchDBDocument);
@@ -136,6 +189,7 @@ export class PouchDBTransactionRepository implements ITransactionRepository {
     id: string,
     updates: Partial<Omit<Transaction, "id" | "createdAt">>,
   ): Promise<Transaction> {
+    await this.ensureInitialized();
     try {
       const existingDoc = await this.db.get(id);
       const now = new Date().toISOString();
@@ -152,6 +206,12 @@ export class PouchDBTransactionRepository implements ITransactionRepository {
       if ((error as { name?: string }).name === "not_found") {
         throw new Error(`Transaction with id ${id} not found`);
       }
+
+      // Handle conflicts during update
+      if (this.isConflictError(error)) {
+        return await this.resolveConflictOnUpdate(id, updates);
+      }
+
       throw error;
     }
   }
@@ -160,6 +220,7 @@ export class PouchDBTransactionRepository implements ITransactionRepository {
    * Deletes a transaction from the database.
    */
   async delete(id: string): Promise<void> {
+    await this.ensureInitialized();
     try {
       const doc = await this.db.get(id);
       await this.db.remove(doc);
@@ -179,6 +240,7 @@ export class PouchDBTransactionRepository implements ITransactionRepository {
     startDate: string,
     endDate: string,
   ): Promise<Transaction[]> {
+    await this.ensureInitialized();
     try {
       const result = await this.db.find({
         selector: {
@@ -209,6 +271,7 @@ export class PouchDBTransactionRepository implements ITransactionRepository {
    * Retrieves transactions filtered by category.
    */
   async getByCategory(category: string): Promise<Transaction[]> {
+    await this.ensureInitialized();
     try {
       const result = await this.db.find({
         selector: { category },
@@ -233,6 +296,7 @@ export class PouchDBTransactionRepository implements ITransactionRepository {
    * Retrieves transactions filtered by type (credit or debit).
    */
   async getByType(type: "credit" | "debit"): Promise<Transaction[]> {
+    await this.ensureInitialized();
     try {
       const result = await this.db.find({
         selector: { type },
@@ -255,6 +319,7 @@ export class PouchDBTransactionRepository implements ITransactionRepository {
    * Searches transactions by description using case-insensitive partial matching.
    */
   async searchByDescription(query: string): Promise<Transaction[]> {
+    await this.ensureInitialized();
     try {
       // PouchDB doesn't support case-insensitive text search easily
       // We'll use a regex approach or fallback to memory filtering
@@ -286,6 +351,7 @@ export class PouchDBTransactionRepository implements ITransactionRepository {
    * Gets the total count of transactions.
    */
   async count(): Promise<number> {
+    await this.ensureInitialized();
     try {
       const result = await this.db.find({
         selector: {},
@@ -310,6 +376,7 @@ export class PouchDBTransactionRepository implements ITransactionRepository {
    * Clears all transactions from the database.
    */
   async clear(): Promise<void> {
+    await this.ensureInitialized();
     const result = await this.db.allDocs();
     const docsToDelete = result.rows
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -332,6 +399,7 @@ export class PouchDBTransactionRepository implements ITransactionRepository {
   async bulkCreate(
     transactions: Omit<Transaction, "id" | "createdAt" | "updatedAt">[],
   ): Promise<Transaction[]> {
+    await this.ensureInitialized();
     const now = new Date().toISOString();
     const newTransactions: Transaction[] = transactions.map((transaction) => ({
       ...transaction,
@@ -359,6 +427,7 @@ export class PouchDBTransactionRepository implements ITransactionRepository {
     implementation: "dexie" | "pouchdb";
     lastModified?: string;
   }> {
+    await this.ensureInitialized();
     const totalTransactions = await this.count();
 
     // Get the most recent transaction to determine last modified
@@ -404,5 +473,184 @@ export class PouchDBTransactionRepository implements ITransactionRepository {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getDatabase(): any {
     return this.db;
+  }
+
+  /**
+   * Gets the sync service instance.
+   */
+  getSyncService(): SyncService | undefined {
+    return this.syncService;
+  }
+
+  /**
+   * Enable or disable sync for this repository.
+   */
+  setSyncEnabled(enabled: boolean): void {
+    if (enabled && !this.syncService) {
+      this.syncService = getSyncService({ enableSync: true });
+      this.setupConflictHandlers();
+    } else if (!enabled && this.syncService) {
+      this.syncService.stopSync();
+    }
+  }
+
+  /**
+   * Force a manual sync with the remote database.
+   */
+  async forceSync(): Promise<void> {
+    await this.ensureInitialized();
+    if (!this.syncService) {
+      throw new Error("Sync is not enabled for this repository");
+    }
+
+    await this.syncService.forcSync();
+  }
+
+  /**
+   * Get current sync status and statistics.
+   */
+  getSyncStatus(): {
+    isEnabled: boolean;
+    stats?: {
+      docsRead: number;
+      docsWritten: number;
+      pending: number;
+      lastSync?: Date;
+      status: SyncStatus;
+    };
+    state?: {
+      status: SyncStatus;
+      lastSync?: Date;
+      error?: string;
+      docsRead: number;
+      docsWritten: number;
+      pending: number;
+      isOnline: boolean;
+      retryCount: number;
+    };
+  } {
+    if (!this.syncService) {
+      return { isEnabled: false };
+    }
+
+    return {
+      isEnabled: true,
+      stats: this.syncService.getSyncStats(),
+      state: this.syncService.getState(),
+    };
+  }
+
+  /**
+   * Set up conflict resolution handlers.
+   */
+  private setupConflictHandlers(): void {
+    if (!this.syncService) return;
+
+    // Listen for sync events to handle conflicts
+    this.syncService.onSyncEvent((event) => {
+      if (event.status === "error" && event.error) {
+        console.warn("Sync error:", event.error);
+      }
+    });
+  }
+
+  /**
+   * Check if an error is a conflict error.
+   */
+  private isConflictError(error: unknown): boolean {
+    return !!(
+      error &&
+      typeof error === "object" &&
+      ((error as { name?: string }).name === "conflict" ||
+        (error as { status?: number }).status === 409 ||
+        (error as { message?: string }).message?.includes("conflict"))
+    );
+  }
+
+  /**
+   * Resolve conflict during document creation.
+   */
+  private async resolveConflictOnCreate(
+    doc: PouchDBDocument,
+    transaction: Transaction,
+  ): Promise<Transaction> {
+    try {
+      // Generate a new ID to avoid conflicts
+      const newId = crypto.randomUUID();
+      const newDoc = {
+        ...doc,
+        _id: newId,
+        id: newId,
+      };
+
+      await this.db.put(newDoc);
+      return { ...transaction, id: newId };
+    } catch (error) {
+      console.error("Failed to resolve create conflict:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Resolve conflict during document update.
+   */
+  private async resolveConflictOnUpdate(
+    id: string,
+    updates: Partial<Omit<Transaction, "id" | "createdAt">>,
+  ): Promise<Transaction> {
+    try {
+      // Get the latest version and retry the update
+      const latestDoc = await this.db.get(id);
+      const now = new Date().toISOString();
+
+      let resolvedDoc: PouchDBDocument;
+
+      switch (this.conflictResolution) {
+        case ConflictResolution.LAST_WRITE_WINS:
+          resolvedDoc = {
+            ...latestDoc,
+            ...updates,
+            updatedAt: now,
+          } as PouchDBDocument;
+          break;
+
+        case ConflictResolution.MERGE_CHANGES:
+          // Simple merge strategy - could be enhanced
+          resolvedDoc = {
+            ...latestDoc,
+            ...updates,
+            updatedAt: now,
+            // Keep track of conflict resolution
+            _conflictResolved: true,
+            _conflictResolvedAt: now,
+          } as PouchDBDocument;
+          break;
+
+        default:
+          throw new Error(
+            `Unsupported conflict resolution strategy: ${this.conflictResolution}`,
+          );
+      }
+
+      await this.db.put(resolvedDoc);
+      return this.mapDocToTransaction(resolvedDoc as PouchDBDocument);
+    } catch (error) {
+      console.error("Failed to resolve update conflict:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Set conflict resolution strategy.
+   */
+  setConflictResolution(strategy: ConflictResolution): void {
+    this.conflictResolution = strategy;
+  }
+
+  /**
+   * Get current conflict resolution strategy.
+   */
+  getConflictResolution(): ConflictResolution {
+    return this.conflictResolution;
   }
 }
