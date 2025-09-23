@@ -307,6 +307,10 @@ function App() {
     .filter((t) => t.type === "debit")
     .reduce((sum, t) => sum + t.amount, 0);
 
+  const totalIncome = transactions
+    .filter((t) => t.type === "credit")
+    .reduce((sum, t) => sum + t.amount, 0);
+
   const handleInflowClick = () => {
     setTransactionType("credit");
     setIsModalOpen(true);
@@ -375,6 +379,13 @@ function App() {
                 value={totalExpenses}
                 description={`You've spent ${new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(totalExpenses)} so far`}
                 variant="neutral"
+              />
+
+              <SummaryCard
+                title="Total Income"
+                value={totalIncome}
+                description={`You've earned ${new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(totalIncome)} total`}
+                variant="positive"
               />
             </div>
 
