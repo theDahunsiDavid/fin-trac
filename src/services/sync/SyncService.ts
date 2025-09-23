@@ -255,11 +255,18 @@ export class SyncService {
       // Phase 2: Download remote changes from CouchDB (if enabled)
       if (this.config.bidirectional || this.config.downloadOnly) {
         this.updateSyncStatus({ syncDirection: "download" });
-        await this.performDownloadSync(result);
+        const downloadedChanges = await this.performDownloadSync(result);
+
+        // Update download metadata if we processed changes
+        if (downloadedChanges) {
+          await this.updateDownloadMetadata();
+        }
       }
 
-      // Update sync metadata
-      await this.updateSyncMetadata();
+      // Update upload metadata if we uploaded anything
+      if (result.documentsUploaded > 0) {
+        await this.updateUploadMetadata();
+      }
 
       result.success = result.errors.length === 0;
 
@@ -331,12 +338,12 @@ export class SyncService {
   /**
    * Performs download sync (CouchDB -> local)
    */
-  private async performDownloadSync(result: SyncResult): Promise<void> {
+  private async performDownloadSync(result: SyncResult): Promise<boolean> {
     const remoteChanges = await this.getRemoteChanges();
 
     if (remoteChanges.length === 0) {
       console.log("No remote changes to download");
-      return;
+      return false;
     }
 
     console.log(`Downloading ${remoteChanges.length} remote changes...`);
@@ -366,6 +373,8 @@ export class SyncService {
         console.error(errorMessage, error);
       }
     }
+
+    return true; // We downloaded changes
   }
 
   /**
@@ -723,9 +732,9 @@ export class SyncService {
   }
 
   /**
-   * Updates sync metadata in local storage
+   * Updates download sync metadata in local storage
    */
-  private async updateSyncMetadata(): Promise<void> {
+  private async updateDownloadMetadata(): Promise<void> {
     const currentTime = new Date().toISOString();
 
     // Get the latest sequence from CouchDB
@@ -737,10 +746,13 @@ export class SyncService {
       console.warn("Failed to get latest sequence from CouchDB:", error);
     }
 
+    // Load existing metadata
+    const existingMetadata = await this.loadSyncMetadata();
+
     const metadata: SyncMetadata = {
-      lastUploadSequence: latestSequence,
+      lastUploadSequence: existingMetadata?.lastUploadSequence || "0",
       lastDownloadSequence: latestSequence,
-      lastUploadTimestamp: currentTime,
+      lastUploadTimestamp: existingMetadata?.lastUploadTimestamp || currentTime,
       lastDownloadTimestamp: currentTime,
       version: "2.0.0", // Phase 2
     };
@@ -748,7 +760,41 @@ export class SyncService {
     try {
       localStorage.setItem(this.SYNC_METADATA_KEY, JSON.stringify(metadata));
     } catch (error) {
-      console.error("Failed to update sync metadata:", error);
+      console.error("Failed to update download metadata:", error);
+    }
+  }
+
+  /**
+   * Updates upload sync metadata in local storage
+   */
+  private async updateUploadMetadata(): Promise<void> {
+    const currentTime = new Date().toISOString();
+
+    // Get the latest sequence from CouchDB
+    let latestSequence = "0";
+    try {
+      const info = await this.couchClient.getInfo();
+      latestSequence = info.update_seq;
+    } catch (error) {
+      console.warn("Failed to get latest sequence from CouchDB:", error);
+    }
+
+    // Load existing metadata
+    const existingMetadata = await this.loadSyncMetadata();
+
+    const metadata: SyncMetadata = {
+      lastUploadSequence: latestSequence,
+      lastDownloadSequence: existingMetadata?.lastDownloadSequence || "0",
+      lastUploadTimestamp: currentTime,
+      lastDownloadTimestamp:
+        existingMetadata?.lastDownloadTimestamp || currentTime,
+      version: "2.0.0", // Phase 2
+    };
+
+    try {
+      localStorage.setItem(this.SYNC_METADATA_KEY, JSON.stringify(metadata));
+    } catch (error) {
+      console.error("Failed to update upload metadata:", error);
     }
   }
 
@@ -867,6 +913,36 @@ export class SyncService {
       };
     } catch {
       return null;
+    }
+  }
+
+  /**
+   * Check if there are pending remote changes that haven't been synced locally
+   */
+  async hasPendingRemoteChanges(): Promise<boolean> {
+    try {
+      // Get current remote sequence
+      const remoteInfo = await this.getRemoteInfo();
+      if (!remoteInfo) {
+        return false; // Can't connect, assume no changes
+      }
+
+      // Get local sync metadata
+      const syncMetadata = await this.loadSyncMetadata();
+      if (!syncMetadata) {
+        return true; // No local metadata means we've never synced
+      }
+
+      // Compare sequences - if remote is ahead, there are pending changes
+      const localSequence = syncMetadata.lastDownloadSequence || "0";
+      const remoteSequence = remoteInfo.updateSeq;
+
+      // In CouchDB, sequences can be complex (e.g., "1-abc123" or just numbers)
+      // For simple comparison, we'll check if they're different
+      return localSequence !== remoteSequence;
+    } catch (error) {
+      console.warn("Failed to check for pending remote changes:", error);
+      return false; // On error, don't show nudge
     }
   }
 

@@ -1,5 +1,5 @@
-import React from "react";
-import { useCouchDBSyncStatus } from "../hooks/useCouchDBSync";
+import React, { useState, useEffect, useRef } from "react";
+import { useCouchDBSync } from "../hooks/useCouchDBSync";
 
 interface HeaderProps {
   onInflowClick: () => void;
@@ -36,23 +36,92 @@ export const Header: React.FC<HeaderProps> = ({
   onSpendClick,
   onSyncClick,
 }) => {
-  // Get real-time sync status
-  const { isEnabled, isConnected, isRunning, hasError, error, lastSync } =
-    useCouchDBSyncStatus();
+  // Get real-time sync status and operations
+  const {
+    isEnabled,
+    isConnected,
+    isInitialized,
+    isRunning,
+    error,
+    lastSync,
+    hasPendingRemoteChanges,
+  } = useCouchDBSync(true, false);
+
+  const [hasPendingChanges, setHasPendingChanges] = useState(false);
+
+  // Check for pending remote changes periodically
+  useEffect(() => {
+    let checkInterval: NodeJS.Timeout;
+
+    const checkPendingChanges = async () => {
+      if (isConnected && isInitialized && !isRunning) {
+        try {
+          const pending = await hasPendingRemoteChanges();
+          setHasPendingChanges(pending);
+        } catch (error) {
+          console.warn("Failed to check pending changes in header:", error);
+          setHasPendingChanges(false);
+        }
+      } else {
+        setHasPendingChanges(false);
+      }
+    };
+
+    if (isConnected && isInitialized) {
+      // Check immediately
+      checkPendingChanges();
+
+      // Then check every 30 seconds
+      checkInterval = setInterval(checkPendingChanges, 30000);
+    }
+
+    return () => {
+      if (checkInterval) {
+        clearInterval(checkInterval);
+      }
+    };
+  }, [isConnected, isInitialized, isRunning, hasPendingRemoteChanges]);
+
+  // Track the last sync timestamp to detect when a new sync completes
+  const lastSyncRef = useRef<string | null>(null);
+
+  // Initialize lastSyncRef on first render to avoid false positive
+  useEffect(() => {
+    if (lastSyncRef.current === null && lastSync) {
+      lastSyncRef.current = lastSync;
+    }
+  }, [lastSync]);
+
+  // Reset pending changes state only after a NEW sync completes
+  useEffect(() => {
+    // If sync just finished and lastSync changed, reset pending changes
+    if (
+      !isRunning &&
+      lastSync &&
+      lastSync !== lastSyncRef.current &&
+      lastSyncRef.current !== null
+    ) {
+      setHasPendingChanges(false);
+      lastSyncRef.current = lastSync;
+    }
+  }, [isRunning, lastSync]);
 
   // Determine sync button appearance based on real-time status
   const getSyncButtonStyle = () => {
     if (!isEnabled) {
       return "text-gray-400"; // Sync disabled
     }
-    if (hasError) {
+    if (error) {
       return "text-red-300"; // Connection error
     }
     if (isRunning) {
       return "text-yellow-300"; // Currently syncing
     }
+    if (isConnected && hasPendingChanges) {
+      return "text-blue-400"; // Connected but has pending changes
+    }
     if (isConnected) {
-      return "text-green-300"; // Connected and ready
+      return "text-green-300"; // Connected and in sync
     }
     return "text-blue-300"; // Enabled but not connected
   };
@@ -62,19 +131,22 @@ export const Header: React.FC<HeaderProps> = ({
     if (!isEnabled) {
       return "Sync disabled";
     }
-    if (hasError) {
+    if (error) {
       return `Sync error: ${error}`;
     }
     if (isRunning) {
       return "Syncing...";
     }
+    if (isConnected && hasPendingChanges) {
+      return "New data available - Click to sync";
+    }
     if (isConnected) {
       const lastSyncText = lastSync
         ? new Date(lastSync).toLocaleTimeString()
         : "Never";
-      return `Connected - Last sync: ${lastSyncText}`;
+      return `In sync - Last sync: ${lastSyncText}`;
     }
-    return "Sync enabled but not connected";
+    return "Ready to sync";
   };
   return (
     <header className="flex items-center justify-between mb-8">

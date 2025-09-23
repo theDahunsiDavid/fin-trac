@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useCouchDBSync } from "../hooks/useCouchDBSync";
 
 interface SyncControlsProps {
@@ -29,6 +29,7 @@ export const SyncControls: React.FC<SyncControlsProps> = ({
     stopAutoSync,
     checkConnection,
     refreshRemoteInfo,
+    hasPendingRemoteChanges,
     clearError,
     initialize,
   } = useCouchDBSync(true, false); // Auto-init but don't auto-start
@@ -36,18 +37,64 @@ export const SyncControls: React.FC<SyncControlsProps> = ({
   const [isOperating, setIsOperating] = useState(false);
   const [operationMessage, setOperationMessage] = useState<string>("");
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
+  const [hasPendingChanges, setHasPendingChanges] = useState(false);
 
-  // Debug logging for sync hook state
+  // Check for pending remote changes periodically
   useEffect(() => {
-    console.log("=== SYNC CONTROLS DEBUG ===");
-    console.log("isEnabled:", isEnabled);
-    console.log("isConnected:", isConnected);
-    console.log("isInitialized:", isInitialized);
-    console.log("error:", error);
-    console.log("config:", config);
-    console.log("remoteInfo:", remoteInfo);
-    console.log("=== END SYNC CONTROLS DEBUG ===");
-  }, [isEnabled, isConnected, isInitialized, error, config, remoteInfo]);
+    let checkInterval: NodeJS.Timeout;
+
+    const checkPendingChanges = async () => {
+      if (isConnected && isInitialized && !isRunning) {
+        try {
+          const pending = await hasPendingRemoteChanges();
+          setHasPendingChanges(pending);
+        } catch (error) {
+          console.warn("Failed to check pending changes:", error);
+          setHasPendingChanges(false);
+        }
+      } else {
+        setHasPendingChanges(false);
+      }
+    };
+
+    if (isConnected && isInitialized) {
+      // Check immediately
+      checkPendingChanges();
+
+      // Then check every 30 seconds
+      checkInterval = setInterval(checkPendingChanges, 30000);
+    }
+
+    return () => {
+      if (checkInterval) {
+        clearInterval(checkInterval);
+      }
+    };
+  }, [isConnected, isInitialized, isRunning, hasPendingRemoteChanges]);
+
+  // Track the last sync timestamp to detect when a new sync completes
+  const lastSyncRef = useRef<string | null>(null);
+
+  // Initialize lastSyncRef on first render to avoid false positive
+  useEffect(() => {
+    if (lastSyncRef.current === null && lastSync) {
+      lastSyncRef.current = lastSync;
+    }
+  }, [lastSync]);
+
+  // Reset pending changes state only after a NEW sync completes
+  useEffect(() => {
+    // If sync just finished and lastSync changed, reset pending changes
+    if (
+      !isRunning &&
+      lastSync &&
+      lastSync !== lastSyncRef.current &&
+      lastSyncRef.current !== null
+    ) {
+      setHasPendingChanges(false);
+      lastSyncRef.current = lastSync;
+    }
+  }, [isRunning, lastSync]);
 
   // Don't render if sync is not configured
   if (!config) {
@@ -88,8 +135,15 @@ export const SyncControls: React.FC<SyncControlsProps> = ({
     }
   };
 
-  const handleManualSync = () => {
-    handleOperation(() => sync(), "Syncing documents...");
+  const handleManualSync = async () => {
+    await handleOperation(() => sync(), "Syncing documents...");
+    // Check for pending changes after sync completes
+    try {
+      const pending = await hasPendingRemoteChanges();
+      setHasPendingChanges(pending);
+    } catch (error) {
+      console.warn("Failed to check pending changes after sync:", error);
+    }
   };
 
   const handleToggleAutoSync = () => {
@@ -128,15 +182,6 @@ export const SyncControls: React.FC<SyncControlsProps> = ({
 
   const canSync = isEnabled && isConnected && !isRunning && isInitialized;
   const hasError = !!error;
-
-  // Helper function to check if sync is stale (>1 hour ago)
-  const isSyncStale = (): boolean => {
-    if (!lastSync) return true; // Never synced
-    const syncDate = new Date(lastSync);
-    const now = new Date();
-    const diffHours = (now.getTime() - syncDate.getTime()) / (1000 * 60 * 60);
-    return diffHours > 1;
-  };
 
   // Helper function to identify connection errors vs real errors
   const isConnectionError = (errorMessage: string | null): boolean => {
@@ -237,15 +282,16 @@ export const SyncControls: React.FC<SyncControlsProps> = ({
           </div>
         )}
 
-      {/* Smart nudge for stale sync */}
+      {/* Smart nudge for pending remote changes */}
       {isConnected &&
         isInitialized &&
         !isRunning &&
         !hasError &&
-        isSyncStale() && (
+        hasPendingChanges && (
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
             <p className="text-sm text-blue-800">
-              🔄 Welcome back! Click "Sync Now" to get your latest transactions.
+              Click "Sync Now" to sync your latest transactions across your
+              devices.
             </p>
           </div>
         )}

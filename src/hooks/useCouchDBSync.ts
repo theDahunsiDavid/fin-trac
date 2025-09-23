@@ -51,6 +51,7 @@ export interface CouchDBSyncOperations {
   // Connection management
   checkConnection: () => Promise<boolean>;
   refreshRemoteInfo: () => Promise<void>;
+  hasPendingRemoteChanges: () => Promise<boolean>;
 
   // Status management
   refreshStatus: () => void;
@@ -404,6 +405,23 @@ export const useCouchDBSync = (
   }, []);
 
   /**
+   * Check if there are pending remote changes
+   */
+  const hasPendingRemoteChanges = useCallback(async (): Promise<boolean> => {
+    const serviceToUse = syncServiceRef.current || globalSyncService;
+    if (!serviceToUse) {
+      return false;
+    }
+
+    try {
+      return await serviceToUse.hasPendingRemoteChanges();
+    } catch (error) {
+      console.warn("Failed to check pending remote changes:", error);
+      return false;
+    }
+  }, []);
+
+  /**
    * Refresh sync status from service
    */
   const refreshStatus = useCallback(() => {
@@ -498,6 +516,7 @@ export const useCouchDBSync = (
     stopAutoSync,
     checkConnection,
     refreshRemoteInfo,
+    hasPendingRemoteChanges,
     refreshStatus,
     clearError,
 
@@ -561,6 +580,7 @@ export const useCouchDBSyncOperations = () => {
     stopAutoSync,
     checkConnection,
     refreshRemoteInfo,
+    hasPendingRemoteChanges,
     refreshStatus,
     clearError,
   } = useCouchDBSync(false, false); // Don't auto-init or auto-start
@@ -572,6 +592,7 @@ export const useCouchDBSyncOperations = () => {
     stopAutoSync,
     checkConnection,
     refreshRemoteInfo,
+    hasPendingRemoteChanges,
     refreshStatus,
     clearError,
   };
