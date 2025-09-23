@@ -112,7 +112,7 @@ export const useCouchDBSync = (
   const config = syncConfig.getConfig();
 
   /**
-   * Initialize the sync service (robust singleton pattern)
+   * Initialize the sync service with auto-retry logic
    */
   const initialize = useCallback(async (): Promise<boolean> => {
     if (!config) {
@@ -134,9 +134,13 @@ export const useCouchDBSync = (
         error: null,
       }));
 
-      // Check connection and get remote info silently
+      // Check connection and get remote info silently with retry
       try {
-        const connected = await globalSyncService.checkConnection();
+        const connected = await retryOperation(
+          () => globalSyncService!.checkConnection(),
+          2,
+          500,
+        );
         setState((prev) => ({
           ...prev,
           isConnected: connected,
@@ -161,72 +165,133 @@ export const useCouchDBSync = (
       return await initializationPromise;
     }
 
-    // Create new initialization promise
+    // Create new initialization promise with retry logic
     initializationPromise = (async () => {
       // Double-check after promise creation (race condition protection)
       if (globalSyncService) {
         return true;
       }
 
-      try {
-        const syncService = new SyncService(config);
-        const success = await syncService.initialize();
+      const maxRetries = 3;
+      let lastError: Error | null = null;
 
-        if (success) {
-          globalSyncService = syncService;
-          syncServiceRef.current = syncService;
-
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
           setState((prev) => ({
             ...prev,
-            isEnabled: true,
-            isInitialized: true,
-            error: null,
+            error:
+              attempt === 1
+                ? null
+                : `Connecting... (attempt ${attempt}/${maxRetries})`,
           }));
 
-          // Check initial connection
-          const connected = await syncService.checkConnection();
-          setState((prev) => ({
-            ...prev,
-            isConnected: connected,
-          }));
+          const syncService = new SyncService(config);
+          const success = await syncService.initialize();
 
-          // Get initial remote info if connected
-          if (connected) {
-            const remoteInfo = await syncService.getRemoteInfo();
+          if (success) {
+            globalSyncService = syncService;
+            syncServiceRef.current = syncService;
+
             setState((prev) => ({
               ...prev,
-              remoteInfo,
-              error: null, // Clear any errors since connection and remote info worked
+              isEnabled: true,
+              isInitialized: true,
+              error: null,
             }));
-          }
 
-          return true;
-        } else {
-          setState((prev) => ({
-            ...prev,
-            isEnabled: false,
-            error: "Failed to initialize sync service",
-          }));
-          return false;
+            // Check initial connection with retry
+            const connected = await retryOperation(
+              () => syncService.checkConnection(),
+              2,
+              500,
+            );
+            setState((prev) => ({
+              ...prev,
+              isConnected: connected,
+            }));
+
+            // Get initial remote info if connected
+            if (connected) {
+              const remoteInfo = await syncService.getRemoteInfo();
+              setState((prev) => ({
+                ...prev,
+                remoteInfo,
+                error: null, // Clear any errors since connection and remote info worked
+              }));
+            } else if (attempt === maxRetries) {
+              // Only show "ready to sync" message after all retries
+              setState((prev) => ({
+                ...prev,
+                error: null, // Don't show error for configured but not connected
+              }));
+            }
+
+            return true;
+          } else {
+            throw new Error("Failed to initialize sync service");
+          }
+        } catch (error) {
+          lastError =
+            error instanceof Error ? error : new Error("Unknown error");
+          console.warn(
+            `Sync initialization attempt ${attempt} failed:`,
+            lastError,
+          );
+
+          if (attempt < maxRetries) {
+            // Wait with exponential backoff before retry
+            const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+            await new Promise((resolve) => setTimeout(resolve, delay));
+          }
         }
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "Unknown initialization error";
-        setState((prev) => ({
-          ...prev,
-          isEnabled: false,
-          error: errorMessage,
-        }));
-        return false;
-      } finally {
-        initializationPromise = null;
       }
+
+      // All retries failed
+      const errorMessage = lastError?.message || "Unknown initialization error";
+      const isConnectionError =
+        errorMessage.includes("fetch") ||
+        errorMessage.includes("network") ||
+        errorMessage.includes("CORS") ||
+        errorMessage.includes("connection");
+
+      setState((prev) => ({
+        ...prev,
+        isEnabled: !isConnectionError, // Still enabled if it's just a connection issue
+        isInitialized: !isConnectionError, // Consider initialized if config is valid
+        error: isConnectionError ? null : errorMessage, // Don't show connection errors as failures
+      }));
+
+      return false;
     })();
 
     return await initializationPromise;
   }, [config]);
+
+  /**
+   * Utility function for retrying operations with exponential backoff
+   */
+  const retryOperation = async <T>(
+    operation: () => Promise<T>,
+    maxRetries: number,
+    baseDelay: number,
+  ): Promise<T> => {
+    let lastError: Error;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error("Unknown error");
+
+        if (attempt < maxRetries) {
+          const delay = baseDelay * Math.pow(2, attempt - 1);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      }
+    }
+
+    throw lastError!;
+  };
 
   /**
    * Perform manual sync

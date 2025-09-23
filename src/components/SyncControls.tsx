@@ -129,6 +129,29 @@ export const SyncControls: React.FC<SyncControlsProps> = ({
   const canSync = isEnabled && isConnected && !isRunning && isInitialized;
   const hasError = !!error;
 
+  // Helper function to check if sync is stale (>1 hour ago)
+  const isSyncStale = (): boolean => {
+    if (!lastSync) return true; // Never synced
+    const syncDate = new Date(lastSync);
+    const now = new Date();
+    const diffHours = (now.getTime() - syncDate.getTime()) / (1000 * 60 * 60);
+    return diffHours > 1;
+  };
+
+  // Helper function to identify connection errors vs real errors
+  const isConnectionError = (errorMessage: string | null): boolean => {
+    if (!errorMessage) return false;
+    return (
+      errorMessage.includes("Failed to fetch") ||
+      errorMessage.includes("fetch") ||
+      errorMessage.includes("network") ||
+      errorMessage.includes("CORS") ||
+      errorMessage.includes("connection") ||
+      errorMessage.includes("Connection refused") ||
+      errorMessage.includes("timeout")
+    );
+  };
+
   const formatLastSync = () => {
     if (!lastSync) return "Never";
 
@@ -157,8 +180,8 @@ export const SyncControls: React.FC<SyncControlsProps> = ({
         )}
       </div>
 
-      {/* Helpful message for users without sync setup - only show when not connected */}
-      {(!isConnected || !isInitialized || hasError) && (
+      {/* Helpful message for users without sync setup - only show for actual config issues */}
+      {(!config || (hasError && error?.includes("not configured"))) && (
         <div className="mb-6 text-center">
           <p className="text-sm text-gray-600 mb-1">
             ⚠️ No sync setup? These error messages are normal
@@ -170,7 +193,17 @@ export const SyncControls: React.FC<SyncControlsProps> = ({
         </div>
       )}
 
-      {!isInitialized && (
+      {/* Ready to sync message for configured but not connected */}
+      {config && !isConnected && !hasError && isInitialized && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+          <p className="text-sm text-green-800">
+            ✅ Sync is configured and ready. Click "Sync Now" to connect and
+            sync your data.
+          </p>
+        </div>
+      )}
+
+      {!isInitialized && !error?.includes("attempt") && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
           <div className="flex items-center justify-between">
             <p className="text-sm text-blue-800">
@@ -187,15 +220,37 @@ export const SyncControls: React.FC<SyncControlsProps> = ({
         </div>
       )}
 
-      {!isConnected && isInitialized && (
-        <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
-          <p className="text-sm text-orange-800">
-            Not connected to CouchDB. Please check your database configuration.
-          </p>
+      {error?.includes("attempt") && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <p className="text-sm text-blue-800">{error}</p>
         </div>
       )}
 
-      {hasError && (
+      {!isConnected &&
+        isInitialized &&
+        (!hasError || isConnectionError(error)) && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+            <p className="text-sm text-yellow-800">
+              ⏳ Ready to connect. Click "Sync Now" to establish connection and
+              sync your data.
+            </p>
+          </div>
+        )}
+
+      {/* Smart nudge for stale sync */}
+      {isConnected &&
+        isInitialized &&
+        !isRunning &&
+        !hasError &&
+        isSyncStale() && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-sm text-blue-800">
+              🔄 Welcome back! Click "Sync Now" to get your latest transactions.
+            </p>
+          </div>
+        )}
+
+      {hasError && !error?.includes("attempt") && !isConnectionError(error) && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
           <div className="flex items-center justify-between">
             <p className="text-sm text-red-800">{error}</p>
@@ -341,18 +396,22 @@ export const SyncControls: React.FC<SyncControlsProps> = ({
   );
 
   function getStatusText(): string {
+    if (error?.includes("attempt")) return "Connecting";
     if (!isInitialized) return "Not Initialized";
-    if (hasError) return "Error";
+    if (hasError && !isConnectionError(error)) return "Error";
     if (isRunning) return "Syncing";
     if (isConnected) return "Connected";
+    if (isEnabled) return "Ready";
     return "Disconnected";
   }
 
   function getStatusColor(): string {
+    if (error?.includes("attempt")) return "text-blue-600";
     if (!isInitialized) return "text-gray-500";
-    if (hasError) return "text-red-600";
+    if (hasError && !isConnectionError(error)) return "text-red-600";
     if (isRunning) return "text-blue-600";
     if (isConnected) return "text-emerald-600";
+    if (isEnabled) return "text-yellow-600";
     return "text-orange-600";
   }
 };
