@@ -362,31 +362,37 @@ function App() {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Dashboard</h2>
 
-            <div className="flex gap-6 mb-6">
-              <SummaryCard
-                title="Balance"
-                value={balance}
-                description={
-                  balance >= 0
-                    ? `You have ${new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(balance)} available`
-                    : `You have a deficit of ${new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(Math.abs(balance))}`
-                }
-                variant={balance >= 0 ? "positive" : "negative"}
-              />
+            <div className="flex gap-6 mb-6 overflow-x-auto hide-scrollbar pb-2">
+              <div className="flex-shrink-0">
+                <SummaryCard
+                  title="Balance"
+                  value={balance}
+                  description={
+                    balance >= 0
+                      ? `You have ${new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(balance)} available`
+                      : `You have a deficit of ${new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(Math.abs(balance))}`
+                  }
+                  variant={balance >= 0 ? "positive" : "negative"}
+                />
+              </div>
 
-              <SummaryCard
-                title="Total Expenses"
-                value={totalExpenses}
-                description={`You've spent ${new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(totalExpenses)} so far`}
-                variant="neutral"
-              />
+              <div className="flex-shrink-0">
+                <SummaryCard
+                  title="Total Expenses"
+                  value={totalExpenses}
+                  description={`You've spent ${new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(totalExpenses)} so far`}
+                  variant="neutral"
+                />
+              </div>
 
-              <SummaryCard
-                title="Total Income"
-                value={totalIncome}
-                description={`You've earned ${new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(totalIncome)} total`}
-                variant="positive"
-              />
+              <div className="flex-shrink-0">
+                <SummaryCard
+                  title="Total Income"
+                  value={totalIncome}
+                  description={`You've earned ${new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(totalIncome)} total`}
+                  variant="positive"
+                />
+              </div>
             </div>
 
             <DashboardChart transactions={transactions} balance={balance} />
