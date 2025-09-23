@@ -408,7 +408,9 @@ function App() {
         )}
 
         {/* Debug Controls - Development Only */}
-        {import.meta.env.DEV && <DebugControls />}
+        {/*{import.meta.env.DEV && <DebugControls />}*/}
+        {/* Keep reference to prevent unused function warning */}
+        {void DebugControls}
       </div>
     </div>
   );
