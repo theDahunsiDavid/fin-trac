@@ -21,7 +21,7 @@ A privacy-friendly, local-first personal finance tracker Progressive Web App (PW
 
 ### Prerequisites
 - Node.js (v18 or higher)
-- npm or yarn
+- npm
 - Docker (optional, for CouchDB sync functionality)
 
 ### Setup & Installation
@@ -311,27 +311,27 @@ If you've set up CouchDB sync:
 ### Core Features (Completed)
 - **Transaction Management**
   - [x] Add income/expense transactions manually
-  - [x] Edit and delete existing transactions
   - [x] Transaction fields: date, description, amount, currency, type (credit/debit), category, tags
   - [x] Form validation and error handling
+  - [ ] Edit and delete existing transactions
 
 - **Data Visualization Dashboard**
-  - [x] Balance summary (total income, expenses, net balance)
-  - [x] Spending by category (pie chart)
+  - [x] Balance summary (net balance, expenses)
   - [x] Monthly spending trends (line chart)
   - [x] Interactive charts using Recharts
   - [x] Responsive design for mobile and desktop
+  - [ ] Spending by category (pie chart)
 
 - **Local-First Storage**
-  - [x] All data stored locally using IndexedDB via PouchDB
+  - [x] All data stored locally using IndexedDB via Dexie
   - [x] Custom bidirectional sync with CouchDB
   - [x] Offline-first functionality
   - [x] Data persistence across browser sessions
 
 - **Category Management**
   - [x] Predefined categories (Food, Transport, Entertainment, etc.)
-  - [x] Custom category creation
-  - [x] Color-coded categories for visual distinction
+  - [ ] Custom category creation
+  - [ ] Color-coded categories for visual distinction
 
 ### Advanced Features (In Progress)
 - **Multi-device Sync**
@@ -366,9 +366,9 @@ If you've set up CouchDB sync:
 - **Tailwind CSS** - Utility-first CSS framework for rapid styling
 
 ### Data & Storage
-- **PouchDB** - Local database using IndexedDB with CouchDB sync
+- **Dexie.js** - Primary local database using IndexedDB with custom CouchDB sync
 - **CouchDB** - Remote database for multi-device synchronization
-- **Dexie.js** - IndexedDB wrapper (legacy, being migrated to PouchDB)
+- **PouchDB** - Legacy implementation (migrated from)
 
 ### Visualization
 - **Recharts** - React chart library for interactive data visualization
@@ -384,7 +384,7 @@ If you've set up CouchDB sync:
 - **Git** - Version control with conventional commits
 
 ### Deployment
-- **Vercel** - Production hosting and deployment platform
+- Not yet deployed, but runs locally and can be deployed to platforms like Vercel or Netlify.
 
 <br>
 
@@ -394,49 +394,27 @@ If you've set up CouchDB sync:
 ```bash
 fin-trac/
 ├── src/
-│   ├── components/          # Reusable UI components
-│   │   ├── ui/             # Basic UI primitives
-│   │   └── layout/         # Layout components
-│   ├── features/           # Feature-based modules
+│   ├── components/          # Reusable UI components (Button, Card, Header, Modal, etc.)
+│   ├── features/           # Feature-based modules organized by domain
 │   │   ├── transactions/   # Transaction management
 │   │   │   ├── components/ # Transaction-specific components
-│   │   │   ├── hooks/      # Transaction-related hooks
-│   │   │   └── types.ts    # Transaction TypeScript definitions
-│   │   ├── dashboard/      # Analytics and visualization
-│   │   │   ├── components/ # Chart and summary components
-│   │   │   ├── hooks/      # Dashboard data processing hooks
-│   │   │   └── utils.ts    # Chart calculation utilities
-│   │   └── categories/     # Category management
+│   │   │   └── hooks/      # Transaction-related hooks
+│   │   └── dashboard/      # Analytics and visualization
+│   │       ├── components/ # Chart and summary components
+│   │       └── hooks/      # Dashboard data processing hooks
 │   ├── services/           # External services and utilities
-│   │   ├── pouchdb/       # PouchDB configuration and schema
-│   │   ├── repos/         # Data access repositories
-│   │   ├── utils/         # Utility functions
-│   │   └── sync/          # CouchDB synchronization
+│   │   ├── db/            # Dexie database configuration and schema
+│   │   ├── repos/         # Data access repositories (CRUD operations)
+│   │   ├── sync/          # CouchDB synchronization services
+│   │   └── utils/         # Utility functions (currency, date, UUID, validation)
 │   ├── hooks/             # Shared custom hooks
 │   ├── test/              # Test utilities and setup
-│   ├── App.tsx            # Main application component
-│   └── main.tsx           # Application entry point
-├── public/                # Static assets
-├── dist/                  # Production build output
-└── coverage/              # Test coverage reports
-```
-
-### Data Schema
-
-**Transaction Model**
-```ts
-{
-  id: string;
-  date: string;          // ISO 8601
-  description: string;
-  amount: number;
-  currency: string;      // e.g. "USD", "NGN" (multi-currency placeholder)
-  type: "credit" | "debit";
-  category: string;
-  tags?: string[];
-  createdAt: string;
-  updatedAt: string;
-}
+│   └── assets/            # Static assets (images, icons)
+├── public/                # Static assets served directly
+├── scripts/               # Build and utility scripts
+├── dist/                  # Production build output (generated)
+├── coverage/              # Test coverage reports (generated)
+└── node_modules/          # Dependencies (generated)
 ```
 
 **Category Model**
