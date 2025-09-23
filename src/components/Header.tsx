@@ -1,4 +1,5 @@
 import React from "react";
+import { useCouchDBSyncStatus } from "../hooks/useCouchDBSync";
 
 interface HeaderProps {
   onInflowClick: () => void;
@@ -35,16 +36,45 @@ export const Header: React.FC<HeaderProps> = ({
   onSpendClick,
   onSyncClick,
 }) => {
-  // Simple sync status check - could be enhanced to use actual sync hook
-  const syncEnabled = import.meta.env.VITE_SYNC_ENABLED === "true";
+  // Get real-time sync status
+  const { isEnabled, isConnected, isRunning, hasError, error, lastSync } =
+    useCouchDBSyncStatus();
 
-  // Determine sync button appearance based on status
+  // Determine sync button appearance based on real-time status
   const getSyncButtonStyle = () => {
-    if (!syncEnabled) {
-      return "text-gray-400"; // Disabled/disconnected
+    if (!isEnabled) {
+      return "text-gray-400"; // Sync disabled
     }
-    // Could add more states here: syncing (yellow), connected (green), etc.
-    return "text-blue-500"; // Default connected state
+    if (hasError) {
+      return "text-red-300"; // Connection error
+    }
+    if (isRunning) {
+      return "text-yellow-300"; // Currently syncing
+    }
+    if (isConnected) {
+      return "text-green-300"; // Connected and ready
+    }
+    return "text-blue-300"; // Enabled but not connected
+  };
+
+  // Get tooltip text based on status
+  const getTooltipText = () => {
+    if (!isEnabled) {
+      return "Sync disabled";
+    }
+    if (hasError) {
+      return `Sync error: ${error}`;
+    }
+    if (isRunning) {
+      return "Syncing...";
+    }
+    if (isConnected) {
+      const lastSyncText = lastSync
+        ? new Date(lastSync).toLocaleTimeString()
+        : "Never";
+      return `Connected - Last sync: ${lastSyncText}`;
+    }
+    return "Sync enabled but not connected";
   };
   return (
     <header className="flex items-center justify-between mb-8">
@@ -54,10 +84,21 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Sync Button */}
         <button
           onClick={onSyncClick}
-          className={`p-2 rounded hover:bg-gray-100 transition-colors ${getSyncButtonStyle()}`}
-          title={syncEnabled ? "Open sync settings" : "Sync disabled"}
+          className={`p-2 rounded hover:bg-gray-100 transition-colors`}
+          title={getTooltipText()}
         >
-          <span className="text-lg">☁️</span>
+          <svg
+            className={`w-5 h-5 ${getSyncButtonStyle()}`}
+            fill="currentColor"
+            viewBox="0 0 20 20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              fillRule="evenodd"
+              d="M5.5 17a4.5 4.5 0 01-1.44-8.765 4.5 4.5 0 018.302-3.046 3.5 3.5 0 014.504 4.272A4 4 0 0115 17H5.5zm3.75-2.75a.75.75 0 001.5 0V9.66l1.95 2.1a.75.75 0 101.1-1.02l-3.25-3.5a.75.75 0 00-1.1 0l-3.25 3.5a.75.75 0 101.1 1.02l1.95-2.1v4.59z"
+              clipRule="evenodd"
+            />
+          </svg>
         </button>
 
         {/* Transaction Buttons */}
