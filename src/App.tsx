@@ -9,59 +9,35 @@ import type { Transaction } from "./features/transactions/types";
 import { syncConfig } from "./services/sync/SyncConfig";
 
 /**
- * Main application component for FinTrac.
+ * Debug Controls Component
  *
- * This component serves as the root of the React app, orchestrating the main UI sections for dashboard visualization and modal-based transaction entry. It manages modal state, integrates feature modules, and serves as the single source of truth for transaction data across all components.
- *
- * Assumptions:
- * - Feature components (TransactionModal, DashboardChart) are properly exported.
- * - Tailwind CSS classes are available for styling.
- * - useTransactions hook provides transactions data and addTransaction function.
- *
- * Edge cases:
- * - Renders empty sections if components fail to load.
- * - Layout is responsive but assumes standard screen sizes.
- * - Modal state is managed locally for transaction entry.
- * - Shows loading state while transactions are being fetched.
- *
- * Connections:
- * - Manages TransactionModal state and passes handlers to Header.
- * - Imports and renders DashboardChart with transaction data.
- * - Uses useTransactions hook to maintain single source of truth for data.
- * - Mounted by main.tsx as the app's entry point.
+ * Wrapper component that groups all debug-related buttons and functionality.
+ * Only visible in development mode to keep production builds clean.
  */
-function App() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [transactionType, setTransactionType] = useState<"credit" | "debit">(
-    "debit",
-  );
+function DebugControls() {
   const [showDebug, setShowDebug] = useState(false);
   const [networkTest, setNetworkTest] = useState<string>("");
 
-  // Debug logging for environment variables and sync config
-  useEffect(() => {
-    console.log("=== FINTRAC DEBUG INFO ===");
-    console.log("Environment variables:", {
-      VITE_SYNC_ENABLED: import.meta.env.VITE_SYNC_ENABLED,
-      VITE_COUCHDB_URL: import.meta.env.VITE_COUCHDB_URL,
-      VITE_COUCHDB_DATABASE: import.meta.env.VITE_COUCHDB_DATABASE,
-      VITE_COUCHDB_USERNAME: import.meta.env.VITE_COUCHDB_USERNAME,
-      VITE_COUCHDB_PASSWORD: import.meta.env.VITE_COUCHDB_PASSWORD
-        ? "***"
-        : undefined,
-      VITE_USE_POUCHDB: import.meta.env.VITE_USE_POUCHDB,
-    });
-
+  // Get debug info function
+  const getDebugInfo = () => {
     const config = syncConfig.getConfig();
-    console.log("Sync config:", config);
-    console.log("Sync enabled:", syncConfig.isSyncEnabled());
+    const validation = config
+      ? syncConfig.validateConfig()
+      : { valid: false, errors: ["No config"] };
 
-    if (config) {
-      const validation = syncConfig.validateConfig();
-      console.log("Config validation:", validation);
-    }
-    console.log("=== END DEBUG INFO ===");
-  }, []);
+    return {
+      env: {
+        VITE_SYNC_ENABLED: import.meta.env.VITE_SYNC_ENABLED,
+        VITE_COUCHDB_URL: import.meta.env.VITE_COUCHDB_URL,
+        VITE_COUCHDB_DATABASE: import.meta.env.VITE_COUCHDB_DATABASE,
+        VITE_COUCHDB_USERNAME: import.meta.env.VITE_COUCHDB_USERNAME,
+        VITE_USE_POUCHDB: import.meta.env.VITE_USE_POUCHDB,
+      },
+      config,
+      syncEnabled: syncConfig.isSyncEnabled(),
+      validation,
+    };
+  };
 
   // Test network connectivity
   const testNetwork = async () => {
@@ -197,25 +173,120 @@ function App() {
     }
   };
 
-  const getDebugInfo = () => {
-    const config = syncConfig.getConfig();
-    const validation = config
-      ? syncConfig.validateConfig()
-      : { valid: false, errors: ["No config"] };
+  return (
+    <div className="mt-8 pt-4 border-t border-gray-300">
+      <div className="bg-gray-100 p-4 rounded-lg">
+        <h3 className="text-lg font-semibold mb-3 text-gray-700">
+          Developer Tools
+        </h3>
 
-    return {
-      env: {
-        VITE_SYNC_ENABLED: import.meta.env.VITE_SYNC_ENABLED,
-        VITE_COUCHDB_URL: import.meta.env.VITE_COUCHDB_URL,
-        VITE_COUCHDB_DATABASE: import.meta.env.VITE_COUCHDB_DATABASE,
-        VITE_COUCHDB_USERNAME: import.meta.env.VITE_COUCHDB_USERNAME,
-        VITE_USE_POUCHDB: import.meta.env.VITE_USE_POUCHDB,
-      },
-      config,
-      syncEnabled: syncConfig.isSyncEnabled(),
-      validation,
-    };
-  };
+        <div className="space-y-2">
+          <button
+            onClick={() => setShowDebug(!showDebug)}
+            className="text-sm bg-blue-500 text-white px-3 py-1 rounded mr-2"
+          >
+            {showDebug ? "Hide" : "Show"} Debug Info
+          </button>
+
+          <button
+            onClick={testNetwork}
+            className="text-sm bg-green-500 text-white px-3 py-1 rounded mr-2"
+          >
+            Test Network
+          </button>
+
+          <button
+            onClick={testSyncService}
+            className="text-sm bg-purple-500 text-white px-3 py-1 rounded mr-2"
+          >
+            Test Sync Service
+          </button>
+
+          <button
+            onClick={testSyncInit}
+            className="text-sm bg-red-500 text-white px-3 py-1 rounded mr-2"
+          >
+            Test Sync Init
+          </button>
+
+          <button
+            onClick={testSyncHookState}
+            className="text-sm bg-orange-500 text-white px-3 py-1 rounded"
+          >
+            Check Hook State
+          </button>
+        </div>
+
+        {networkTest && (
+          <div className="mt-3 p-2 bg-yellow-100 rounded text-xs">
+            <strong>Network Test:</strong> {networkTest}
+          </div>
+        )}
+
+        {showDebug && (
+          <div className="mt-3 p-3 bg-white rounded text-xs border">
+            <pre className="whitespace-pre-wrap overflow-auto">
+              {JSON.stringify(getDebugInfo(), null, 2)}
+            </pre>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Main application component for FinTrac.
+ *
+ * This component serves as the root of the React app, orchestrating the main UI sections for dashboard visualization and modal-based transaction entry. It manages modal state, integrates feature modules, and serves as the single source of truth for transaction data across all components.
+ *
+ * Assumptions:
+ * - Feature components (TransactionModal, DashboardChart) are properly exported.
+ * - Tailwind CSS classes are available for styling.
+ * - useTransactions hook provides transactions data and addTransaction function.
+ *
+ * Edge cases:
+ * - Renders empty sections if components fail to load.
+ * - Layout is responsive but assumes standard screen sizes.
+ * - Modal state is managed locally for transaction entry.
+ * - Shows loading state while transactions are being fetched.
+ *
+ * Connections:
+ * - Manages TransactionModal state and passes handlers to Header.
+ * - Imports and renders DashboardChart with transaction data.
+ * - Uses useTransactions hook to maintain single source of truth for data.
+ * - Mounted by main.tsx as the app's entry point.
+ */
+function App() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [transactionType, setTransactionType] = useState<"credit" | "debit">(
+    "debit",
+  );
+
+  // Debug logging for environment variables and sync config
+  useEffect(() => {
+    console.log("=== FINTRAC DEBUG INFO ===");
+    console.log("Environment variables:", {
+      VITE_SYNC_ENABLED: import.meta.env.VITE_SYNC_ENABLED,
+      VITE_COUCHDB_URL: import.meta.env.VITE_COUCHDB_URL,
+      VITE_COUCHDB_DATABASE: import.meta.env.VITE_COUCHDB_DATABASE,
+      VITE_COUCHDB_USERNAME: import.meta.env.VITE_COUCHDB_USERNAME,
+      VITE_COUCHDB_PASSWORD: import.meta.env.VITE_COUCHDB_PASSWORD
+        ? "***"
+        : undefined,
+      VITE_USE_POUCHDB: import.meta.env.VITE_USE_POUCHDB,
+    });
+
+    const config = syncConfig.getConfig();
+    console.log("Sync config:", config);
+    console.log("Sync enabled:", syncConfig.isSyncEnabled());
+
+    if (config) {
+      const validation = syncConfig.validateConfig();
+      console.log("Config validation:", validation);
+    }
+    console.log("=== END DEBUG INFO ===");
+  }, []);
 
   // Single source of truth for transaction data
   const {
@@ -273,58 +344,6 @@ function App() {
           onSpendClick={handleSpendClick}
         />
 
-        {/* Debug Panel for Mobile */}
-        <div className="mb-4">
-          <button
-            onClick={() => setShowDebug(!showDebug)}
-            className="text-sm bg-blue-500 text-white px-3 py-1 rounded mr-2"
-          >
-            {showDebug ? "Hide" : "Show"} Debug Info
-          </button>
-
-          <button
-            onClick={testNetwork}
-            className="text-sm bg-green-500 text-white px-3 py-1 rounded mr-2"
-          >
-            Test Network
-          </button>
-
-          <button
-            onClick={testSyncService}
-            className="text-sm bg-purple-500 text-white px-3 py-1 rounded mr-2"
-          >
-            Test Sync Service
-          </button>
-
-          <button
-            onClick={testSyncInit}
-            className="text-sm bg-red-500 text-white px-3 py-1 rounded mr-2"
-          >
-            Test Sync Init
-          </button>
-
-          <button
-            onClick={testSyncHookState}
-            className="text-sm bg-orange-500 text-white px-3 py-1 rounded"
-          >
-            Check Hook State
-          </button>
-
-          {networkTest && (
-            <div className="mt-2 p-2 bg-yellow-100 rounded text-xs">
-              <strong>Network Test:</strong> {networkTest}
-            </div>
-          )}
-
-          {showDebug && (
-            <div className="mt-2 p-3 bg-gray-100 rounded text-xs">
-              <pre className="whitespace-pre-wrap overflow-auto">
-                {JSON.stringify(getDebugInfo(), null, 2)}
-              </pre>
-            </div>
-          )}
-        </div>
-
         {/* CouchDB Sync Components */}
         <div className="mb-6">
           <SyncControls showAdvanced={true} />
@@ -364,6 +383,9 @@ function App() {
           transactionType={transactionType}
           addTransaction={addTransaction}
         />
+
+        {/* Debug Controls - Development Only */}
+        {import.meta.env.DEV && <DebugControls />}
       </div>
     </div>
   );
