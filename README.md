@@ -148,6 +148,8 @@ A privacy-friendly, local-first personal finance tracker Progressive Web App (PW
    VITE_SYNC_CONFLICT_RESOLUTION=remote-wins
    ```
 
+   <br>
+
    **Environment Variable Reference:**
 
    | Variable | Default | Description |
