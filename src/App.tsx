@@ -259,6 +259,7 @@ function DebugControls() {
  */
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [transactionType, setTransactionType] = useState<"credit" | "debit">(
     "debit",
   );
@@ -320,6 +321,14 @@ function App() {
     setIsModalOpen(false);
   };
 
+  const handleSyncModalOpen = () => {
+    setIsSyncModalOpen(true);
+  };
+
+  const handleSyncModalClose = () => {
+    setIsSyncModalOpen(false);
+  };
+
   // Wrapper function to match TransactionModal's expected interface
   const addTransaction = async (
     transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt">,
@@ -342,12 +351,8 @@ function App() {
         <Header
           onInflowClick={handleInflowClick}
           onSpendClick={handleSpendClick}
+          onSyncClick={handleSyncModalOpen}
         />
-
-        {/* CouchDB Sync Components */}
-        <div className="mb-6">
-          <SyncControls showAdvanced={true} />
-        </div>
 
         <main className="space-y-8">
           <section>
@@ -383,6 +388,24 @@ function App() {
           transactionType={transactionType}
           addTransaction={addTransaction}
         />
+
+        {/* Sync Modal */}
+        {isSyncModalOpen && (
+          <div className="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Sync Settings</h2>
+                <button
+                  onClick={handleSyncModalClose}
+                  className="text-gray-500 hover:text-gray-700 text-xl"
+                >
+                  ×
+                </button>
+              </div>
+              <SyncControls showAdvanced={true} />
+            </div>
+          </div>
+        )}
 
         {/* Debug Controls - Development Only */}
         {import.meta.env.DEV && <DebugControls />}
