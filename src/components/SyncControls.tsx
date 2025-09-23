@@ -157,6 +157,19 @@ export const SyncControls: React.FC<SyncControlsProps> = ({
         )}
       </div>
 
+      {/* Helpful message for users without sync setup - only show when not connected */}
+      {(!isConnected || !isInitialized || hasError) && (
+        <div className="mb-6 text-center">
+          <p className="text-sm text-gray-600 mb-1">
+            ⚠️ No sync setup? These error messages are normal
+          </p>
+          <p className="text-sm text-gray-600">
+            You can safely ignore them if you prefer to use the app
+            offline-only.
+          </p>
+        </div>
+      )}
+
       {!isInitialized && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
           <div className="flex items-center justify-between">
