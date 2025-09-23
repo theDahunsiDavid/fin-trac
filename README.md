@@ -441,9 +441,9 @@ FinTrac prioritizes local data storage and offline functionality:
 
 ### Data Flow Architecture
 ```
-UI Components → Custom Hooks → Repository Layer → PouchDB → IndexedDB
+UI Components → Custom Hooks → Repository Layer → Dexie.js → IndexedDB
                                       ↓
-                              CouchDB Sync Service → Remote CouchDB
+                              Custom CouchDB Sync Service → Remote CouchDB
 ```
 
 ### Component Architecture
