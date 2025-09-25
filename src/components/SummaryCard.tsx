@@ -6,6 +6,7 @@ interface SummaryCardProps {
   value: number;
   description: string;
   variant?: "positive" | "negative" | "neutral";
+  format?: "currency" | "percentage";
 }
 
 /**
@@ -42,8 +43,12 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
   value,
   description,
   variant = "neutral",
+  format = "currency",
 }) => {
-  const formatCurrency = (amount: number) => {
+  const formatValue = (amount: number) => {
+    if (format === "percentage") {
+      return `${amount.toFixed(1)}%`;
+    }
     return new Intl.NumberFormat("en-NG", {
       style: "currency",
       currency: "NGN",
@@ -64,7 +69,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
         <h3 className="text-sm font-medium text-gray-600">{title}</h3>
 
         <div className={`text-1x1 font-bold ${getValueColor()}`}>
-          {formatCurrency(value)}
+          {formatValue(value)}
         </div>
 
         <p className="text-xs text-gray-500 leading-relaxed">{description}</p>

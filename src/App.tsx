@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { TransactionModal } from "./features/transactions";
-import { DashboardChart } from "./features/dashboard";
+import { DashboardChart, ExpensePieChart } from "./features/dashboard";
 import { Header, SummaryCard, ChartCard } from "./components";
 
 import SyncControls from "./components/SyncControls";
@@ -311,6 +311,9 @@ function App() {
     .filter((t) => t.type === "credit")
     .reduce((sum, t) => sum + t.amount, 0);
 
+  const savingsRate =
+    totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0;
+
   const handleInflowClick = () => {
     setTransactionType("credit");
     setIsModalOpen(true);
@@ -393,11 +396,43 @@ function App() {
                   variant="positive"
                 />
               </div>
+
+              <div className="flex-shrink-0">
+                <SummaryCard
+                  title="Savings Rate"
+                  value={savingsRate}
+                  description={
+                    savingsRate > 0
+                      ? `You're saving ${savingsRate.toFixed(1)}% of your income`
+                      : savingsRate < 0
+                        ? `You're overspending by ${Math.abs(savingsRate).toFixed(1)}%`
+                        : totalIncome === 0
+                          ? "Add income to track savings rate"
+                          : "Breaking even on spending"
+                  }
+                  variant={
+                    savingsRate > 0
+                      ? "positive"
+                      : savingsRate < 0
+                        ? "negative"
+                        : "neutral"
+                  }
+                  format="percentage"
+                />
+              </div>
             </div>
 
-            <ChartCard title="Balance Over Time">
-              <DashboardChart transactions={transactions} balance={balance} />
-            </ChartCard>
+            <div className="flex flex-col lg:flex-row lg:gap-6">
+              <ChartCard
+                title="Balance Over Time"
+                className="lg:w-1/2 mb-6 lg:mb-0"
+              >
+                <DashboardChart transactions={transactions} balance={balance} />
+              </ChartCard>
+              <ChartCard title="Expense breakdown" className="lg:w-1/2">
+                <ExpensePieChart transactions={transactions} />
+              </ChartCard>
+            </div>
           </section>
         </main>
 

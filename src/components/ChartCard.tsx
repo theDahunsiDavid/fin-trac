@@ -1,5 +1,5 @@
-import React from 'react';
-import { Card } from './Card';
+import React from "react";
+import { Card } from "./Card";
 
 interface ChartCardProps {
   children: React.ReactNode;
@@ -39,16 +39,14 @@ interface ChartCardProps {
 export const ChartCard: React.FC<ChartCardProps> = ({
   children,
   title,
-  className = ''
+  className = "",
 }) => {
   return (
     <Card className={`w-full min-h-80 ${className}`}>
       {title && (
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+        <h3 className="text-base font-medium text-gray-900 mb-4">{title}</h3>
       )}
-      <div className="w-full h-full">
-        {children}
-      </div>
+      <div className="w-full h-full">{children}</div>
     </Card>
   );
 };
