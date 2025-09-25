@@ -61,15 +61,15 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={data}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+        <XAxis dataKey="date" tick={false} />
         <YAxis
-          tickFormatter={(value) =>
-            new Intl.NumberFormat("en-NG", {
-              style: "currency",
-              currency: "NGN",
-              signDisplay: "always",
-            }).format(value)
-          }
+          tickFormatter={(value) => {
+            if (value === 0) return "₦0";
+            if (Math.abs(value) >= 1000) {
+              return `₦${(value / 1000).toFixed(0)}K`;
+            }
+            return `₦${value}`;
+          }}
           tick={{ fontSize: 12 }}
         />
         {/* Add reference line at zero */}
