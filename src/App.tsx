@@ -360,7 +360,7 @@ function App() {
 
         <main className="space-y-8">
           <section>
-            <h2 className="text-2xl font-semibold mb-4">Dashboard</h2>
+            <h2 className="text-base font-medium mb-4">Dashboard</h2>
 
             <div className="flex gap-6 mb-6 overflow-x-auto hide-scrollbar pb-2">
               <div className="flex-shrink-0">
