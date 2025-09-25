@@ -150,7 +150,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
   return (
     <header className="flex items-center justify-between mb-8">
-      <h1 className="text-xl font-bold text-gray-620">FinTrac</h1>
+      <h1 className="text-xl font-medium text-gray-620">FinTrac</h1>
 
       <div className="flex items-center gap-3">
         {/* Sync Button */}
