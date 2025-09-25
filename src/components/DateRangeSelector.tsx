@@ -27,7 +27,7 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
     };
 
   return (
-    <div className="flex items-center gap-4 mb-6">
+    <div className="flex items-center gap-4">
       <select
         value={selectedRange}
         onChange={handleRangeChange}

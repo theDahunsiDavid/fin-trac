@@ -57,7 +57,7 @@ export const ExpensePieChart: React.FC<ExpensePieChartProps> = ({
   return (
     <ResponsiveContainer width="100%" height={300}>
       <PieChart>
-        <Pie data={data} cx="50%" cy="50%" outerRadius={80} dataKey="value">
+        <Pie data={data} cx="50%" cy="50%" outerRadius={120} dataKey="value">
           {data.map((_, index) => (
             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
           ))}

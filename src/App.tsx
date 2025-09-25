@@ -6,6 +6,7 @@ import {
   SummaryCard,
   ChartCard,
   DateRangeSelector,
+  SyncButton,
 } from "./components";
 
 import SyncControls from "./components/SyncControls";
@@ -373,19 +374,23 @@ function App() {
         <Header
           onInflowClick={handleInflowClick}
           onSpendClick={handleSpendClick}
-          onSyncClick={handleSyncModalOpen}
         />
 
         <main className="space-y-8">
           <section>
             {/*<h2 className="text-base font-medium mb-6">Dashboard</h2>*/}
 
-            <DateRangeSelector
-              selectedRange={dateRange}
-              onRangeChange={setDateRange}
-              customRange={customRange}
-              onCustomRangeChange={setCustomRange}
-            />
+            <div className="flex items-center gap-6 mb-6">
+              <DateRangeSelector
+                selectedRange={dateRange}
+                onRangeChange={setDateRange}
+                customRange={customRange}
+                onCustomRangeChange={setCustomRange}
+              />
+              <div className="flex-shrink-0">
+                <SyncButton onSyncClick={handleSyncModalOpen} />
+              </div>
+            </div>
 
             <div className="flex gap-6 mb-6 overflow-x-auto hide-scrollbar pb-2">
               <div className="flex-shrink-0">

@@ -5,5 +5,6 @@ export * from "./Card";
 export * from "./SummaryCard";
 export * from "./ChartCard";
 export * from "./DateRangeSelector";
+export * from "./SyncButton";
 export * from "./SyncStatus";
 export * from "./SyncControls";
