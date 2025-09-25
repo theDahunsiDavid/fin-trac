@@ -48,11 +48,13 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
     let runningBalance = 0;
     return transactions
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .map((t) => {
+      .map((t, index) => {
         runningBalance += t.type === "credit" ? t.amount : -t.amount;
         return {
           date: new Date(t.date).toLocaleDateString(),
+          dateTime: new Date(t.date).toLocaleString(),
           amount: runningBalance,
+          transactionIndex: index,
         };
       });
   }, [transactions]);
@@ -61,7 +63,7 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={data}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="date" tick={false} />
+        <XAxis dataKey="transactionIndex" tick={false} />
         <YAxis
           tickFormatter={(value) => {
             if (value === 0) return "₦0";
@@ -74,7 +76,13 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
         />
         {/* Add reference line at zero */}
         <ReferenceLine y={0} stroke="#374151" strokeDasharray="3 3" />
-        <Tooltip />
+        <Tooltip
+          labelFormatter={(value) => `Transaction ${parseInt(value) + 1}`}
+          formatter={(value: number) => [
+            `₦${value.toLocaleString()}`,
+            "Balance",
+          ]}
+        />
         <Line
           type="monotone"
           dataKey="amount"
