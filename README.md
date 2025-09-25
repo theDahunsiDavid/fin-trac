@@ -44,7 +44,7 @@ A privacy-friendly, local-first personal finance tracker Progressive Web App (PW
    **Option A: Using Docker (Recommended)**
    ```bash
    # Install Docker
-   sudo pacman -S docker docker-compose # If you're on Arch Linux. For other distros, use the appropriate package manager.
+   sudo pacman -S docker docker-compose # On Arch Linux. For other distros, use the appropriate package manager.
    sudo systemctl start docker
    sudo systemctl enable docker
 
@@ -88,6 +88,8 @@ A privacy-friendly, local-first personal finance tracker Progressive Web App (PW
    sudo pacman -S couchdb # For other distros, use the appropriate package manager.
    sudo systemctl start couchdb
    sudo systemctl enable couchdb
+
+   # Then run the CouchDB container as outlined in Option A above.
    ```
 
 4. **Configure CouchDB (If you want to use sync):**
@@ -277,7 +279,6 @@ Now that you have FinTrac running, here's how to use the application:
    - **Amount**: How much money (e.g., 50.00)
    - **Category**: Select from predefined categories or create a custom one
    - **Date**: Defaults to today, but you can change it
-   - **Tags** (optional): Add tags for better organization
 
 3. **Save the transaction** - click "Add Transaction"
 
@@ -288,7 +289,7 @@ Now that you have FinTrac running, here's how to use the application:
 
 ### Using Sync (If Configured)
 
-If you've set up CouchDB sync:
+If you've set up CouchDB sync, click the cloud icon next to the Inflow/Spend buttons to reveal the sync controls modal:
 
 1. **Manual sync**: Click the **"Sync Now"** button to sync your data with CouchDB
 2. **Monitor sync status**: Watch for sync indicators showing upload/download progress
@@ -455,7 +456,7 @@ UI Components → Custom Hooks → Repository Layer → Dexie.js → IndexedDB
 ### System Boundaries
 - **Frontend-only architecture** - No backend server required
 - **Progressive Web App** - Installable, offline-capable
-- **Local-first storage** - IndexedDB via PouchDB
+- **Local-first storage** - IndexedDB via Dexie
 - **Optional cloud sync** - CouchDB for multi-device access
 
 ### Performance & Optimization
