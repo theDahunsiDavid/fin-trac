@@ -63,7 +63,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
       <div className="flex flex-col justify-between h-full">
         <h3 className="text-sm font-medium text-gray-600">{title}</h3>
 
-        <div className={`text-2xl font-bold ${getValueColor()}`}>
+        <div className={`text-1x1 font-bold ${getValueColor()}`}>
           {formatCurrency(value)}
         </div>
 

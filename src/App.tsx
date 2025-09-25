@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { TransactionModal } from "./features/transactions";
 import { DashboardChart } from "./features/dashboard";
-import { Header, SummaryCard } from "./components";
+import { Header, SummaryCard, ChartCard } from "./components";
 
 import SyncControls from "./components/SyncControls";
 import { useTransactions } from "./features/transactions/hooks/useTransactions";
@@ -360,7 +360,7 @@ function App() {
 
         <main className="space-y-8">
           <section>
-            <h2 className="text-base font-medium mb-4">Dashboard</h2>
+            {/*<h2 className="text-base font-medium mb-4">Dashboard</h2>*/}
 
             <div className="flex gap-6 mb-6 overflow-x-auto hide-scrollbar pb-2">
               <div className="flex-shrink-0">
@@ -395,7 +395,9 @@ function App() {
               </div>
             </div>
 
-            <DashboardChart transactions={transactions} balance={balance} />
+            <ChartCard title="Balance Over Time">
+              <DashboardChart transactions={transactions} balance={balance} />
+            </ChartCard>
           </section>
         </main>
 
