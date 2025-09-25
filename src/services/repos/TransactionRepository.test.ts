@@ -4,43 +4,67 @@ import type { Transaction } from "../../features/transactions/types";
 import { generateUUID } from "../utils/uuid";
 
 // Mock the database
-const mockCollection = {
-  toArray: vi.fn(),
-  first: vi.fn(),
-  count: vi.fn(),
-  orderBy: vi.fn(),
-  filter: vi.fn(),
-};
+vi.mock("../db/db", () => {
+  const mockCollection = {
+    toArray: vi.fn(),
+    first: vi.fn(),
+    count: vi.fn(),
+    orderBy: vi.fn(),
+    filter: vi.fn(),
+  };
 
-const mockTransactionsTable = {
-  add: vi.fn(),
-  get: vi.fn(),
-  put: vi.fn(),
-  delete: vi.fn(),
-  clear: vi.fn(),
-  toArray: vi.fn(),
-  where: vi.fn().mockReturnValue(mockCollection),
-  orderBy: vi.fn().mockReturnValue(mockCollection),
-  filter: vi.fn().mockReturnValue(mockCollection),
-  count: vi.fn(),
-  bulkAdd: vi.fn(),
-  first: vi.fn(),
-};
+  const mockTransactionsTable = {
+    add: vi.fn(),
+    get: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+    clear: vi.fn(),
+    toArray: vi.fn(),
+    where: vi.fn(),
+    orderBy: vi.fn(),
+    filter: vi.fn(),
+    count: vi.fn(),
+    bulkAdd: vi.fn(),
+    first: vi.fn(),
+  };
 
-// Setup chaining for mock collection
-mockCollection.orderBy.mockReturnValue(mockCollection);
-mockCollection.filter.mockReturnValue(mockCollection);
+  // Setup chaining for mock collection
+  mockCollection.orderBy.mockReturnValue(mockCollection);
+  mockCollection.filter.mockReturnValue(mockCollection);
 
-vi.mock("../db/db", () => ({
-  db: {
-    transactions: mockTransactionsTable,
-  },
-}));
+  // Setup chaining for transactions table
+  mockTransactionsTable.where.mockReturnValue(mockCollection);
+  mockTransactionsTable.orderBy.mockReturnValue(mockCollection);
+  mockTransactionsTable.filter.mockReturnValue(mockCollection);
+
+  return {
+    db: {
+      transactions: mockTransactionsTable,
+    },
+  };
+});
 
 // Mock UUID generation
 vi.mock("../utils/uuid", () => ({
   generateUUID: vi.fn(),
 }));
+
+// Create mock instance that we'll use in tests
+const mockTransactionsTable = {
+  add: vi.fn(),
+  get: vi.fn(),
+  put: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  clear: vi.fn(),
+  toArray: vi.fn(),
+  where: vi.fn(),
+  orderBy: vi.fn(),
+  filter: vi.fn(),
+  count: vi.fn(),
+  bulkAdd: vi.fn(),
+  first: vi.fn(),
+};
 
 describe("TransactionRepository", () => {
   let repository: TransactionRepository;
@@ -73,11 +97,6 @@ describe("TransactionRepository", () => {
 
     // Mock UUID generation
     vi.mocked(generateUUID).mockReturnValue("transaction_123");
-
-    // Setup mock returns
-    mockCollection.toArray.mockResolvedValue([]);
-    mockCollection.count.mockResolvedValue(0);
-    mockCollection.first.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -194,7 +213,7 @@ describe("TransactionRepository", () => {
         updatedAt: "2024-01-15T10:30:00.000Z",
       };
 
-      mockTransactionsTable.put.mockResolvedValue("transaction_123");
+      mockTransactionsTable.update.mockResolvedValue("transaction_123");
       mockTransactionsTable.get.mockResolvedValue(updatedTransaction);
 
       const result = await repository.update("transaction_123", updates);
@@ -221,7 +240,7 @@ describe("TransactionRepository", () => {
         updatedAt: "2024-01-15T10:30:00.000Z",
       };
 
-      mockTransactionsTable.put.mockResolvedValue("transaction_123");
+      mockTransactionsTable.update.mockResolvedValue("transaction_123");
       mockTransactionsTable.get.mockResolvedValue(updatedTransaction);
 
       const result = await repository.update("transaction_123", {
@@ -233,7 +252,7 @@ describe("TransactionRepository", () => {
     });
 
     it("should throw error for non-existent transaction", async () => {
-      mockTransactionsTable.put.mockResolvedValue("transaction_123");
+      mockTransactionsTable.update.mockResolvedValue("transaction_123");
       mockTransactionsTable.get.mockResolvedValue(undefined);
 
       await expect(
@@ -253,7 +272,7 @@ describe("TransactionRepository", () => {
         updatedAt: "2024-01-15T10:30:00.000Z",
       };
 
-      mockTransactionsTable.put.mockResolvedValue("transaction_123");
+      mockTransactionsTable.update.mockResolvedValue("transaction_123");
       mockTransactionsTable.get.mockResolvedValue(updatedTransaction);
 
       const result = await repository.update("transaction_123", {
@@ -266,7 +285,7 @@ describe("TransactionRepository", () => {
     });
 
     it("should handle database errors during update", async () => {
-      mockTransactionsTable.put.mockRejectedValue(new Error("Update failed"));
+      mockTransactionsTable.update.mockRejectedValue(new Error("Update failed"));
 
       await expect(
         repository.update("transaction_123", { amount: 200 }),
@@ -328,6 +347,14 @@ describe("TransactionRepository", () => {
     });
 
     it("should return empty array when no transactions exist", async () => {
+      const mockCollection = {
+        toArray: vi.fn().mockResolvedValue([]),
+        orderBy: vi.fn(),
+        filter: vi.fn(),
+      };
+      mockCollection.orderBy.mockReturnValue(mockCollection);
+      mockCollection.filter.mockReturnValue(mockCollection);
+
       mockCollection.toArray.mockResolvedValue([]);
       mockTransactionsTable.orderBy.mockReturnValue(mockCollection);
 
@@ -396,7 +423,11 @@ describe("TransactionRepository", () => {
       const category = "Food";
       const categoryTransactions = [mockTransaction];
 
-      mockCollection.toArray.mockResolvedValue(categoryTransactions);
+      const mockCollection = {
+        toArray: vi.fn().mockResolvedValue(categoryTransactions),
+        orderBy: vi.fn(),
+        filter: vi.fn(),
+      };
       const mockWhere = {
         equals: vi.fn().mockReturnValue(mockCollection),
       };
@@ -410,7 +441,11 @@ describe("TransactionRepository", () => {
     });
 
     it("should return empty array for non-existent category", async () => {
-      mockCollection.toArray.mockResolvedValue([]);
+      const mockCollection = {
+        toArray: vi.fn().mockResolvedValue([]),
+        orderBy: vi.fn(),
+        filter: vi.fn(),
+      };
       const mockWhere = {
         equals: vi.fn().mockReturnValue(mockCollection),
       };
@@ -427,7 +462,11 @@ describe("TransactionRepository", () => {
       const type = "debit";
       const typeTransactions = [mockTransaction];
 
-      mockCollection.toArray.mockResolvedValue(typeTransactions);
+      const mockCollection = {
+        toArray: vi.fn().mockResolvedValue(typeTransactions),
+        orderBy: vi.fn(),
+        filter: vi.fn(),
+      };
       const mockWhere = {
         equals: vi.fn().mockReturnValue(mockCollection),
       };
@@ -441,7 +480,11 @@ describe("TransactionRepository", () => {
     });
 
     it("should handle both credit and debit types", async () => {
-      mockCollection.toArray.mockResolvedValue([]);
+      const mockCollection = {
+        toArray: vi.fn().mockResolvedValue([]),
+        orderBy: vi.fn(),
+        filter: vi.fn(),
+      };
       const mockWhere = {
         equals: vi.fn().mockReturnValue(mockCollection),
       };
@@ -467,7 +510,11 @@ describe("TransactionRepository", () => {
         },
       ];
 
-      mockCollection.toArray.mockResolvedValue(matchingTransactions);
+      const mockCollection = {
+        toArray: vi.fn().mockResolvedValue(matchingTransactions),
+        orderBy: vi.fn(),
+        filter: vi.fn(),
+      };
       mockTransactionsTable.filter.mockReturnValue(mockCollection);
 
       const result = await repository.searchByDescription(searchTerm);
@@ -479,7 +526,11 @@ describe("TransactionRepository", () => {
     });
 
     it("should perform case-insensitive search", async () => {
-      mockCollection.toArray.mockResolvedValue([]);
+      const mockCollection = {
+        toArray: vi.fn().mockResolvedValue([]),
+        orderBy: vi.fn(),
+        filter: vi.fn(),
+      };
       mockTransactionsTable.filter.mockReturnValue(mockCollection);
 
       await repository.searchByDescription("GROCERY");
@@ -754,7 +805,7 @@ describe("TransactionRepository", () => {
         updatedAt: "2024-01-15T10:30:00.000Z",
       };
 
-      mockTransactionsTable.put.mockResolvedValue("expense_1");
+      mockTransactionsTable.update.mockResolvedValue("expense_1");
       mockTransactionsTable.get.mockResolvedValue(updatedExpense);
 
       const result = await repository.update("expense_1", {
@@ -786,7 +837,11 @@ describe("TransactionRepository", () => {
     });
 
     it("should handle monthly expense analysis workflow", async () => {
-      mockCollection.toArray.mockResolvedValue([mockTransaction]);
+      const mockCollection = {
+        toArray: vi.fn().mockResolvedValue([mockTransaction]),
+        orderBy: vi.fn(),
+        filter: vi.fn(),
+      };
       const mockWhere = {
         between: vi.fn().mockReturnValue(mockCollection),
       };
