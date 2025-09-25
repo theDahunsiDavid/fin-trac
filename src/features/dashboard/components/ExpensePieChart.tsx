@@ -1,12 +1,5 @@
 import React, { useMemo } from "react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  Legend,
-} from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import type { Transaction } from "../../transactions/types";
 
 interface ExpensePieChartProps {
@@ -77,7 +70,6 @@ export const ExpensePieChart: React.FC<ExpensePieChartProps> = ({
             }).format(value)
           }
         />
-        <Legend />
       </PieChart>
     </ResponsiveContainer>
   );
