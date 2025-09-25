@@ -1,12 +1,18 @@
 import { useState, useEffect } from "react";
 import { TransactionModal } from "./features/transactions";
 import { DashboardChart, ExpensePieChart } from "./features/dashboard";
-import { Header, SummaryCard, ChartCard } from "./components";
+import {
+  Header,
+  SummaryCard,
+  ChartCard,
+  DateRangeSelector,
+} from "./components";
 
 import SyncControls from "./components/SyncControls";
 import { useTransactions } from "./features/transactions/hooks/useTransactions";
 import type { Transaction } from "./features/transactions/types";
 import { syncConfig } from "./services/sync/SyncConfig";
+import { useDateRangeFilter } from "./hooks/useDateRangeFilter";
 
 /**
  * Debug Controls Component
@@ -296,18 +302,27 @@ function App() {
     addTransaction: addTransactionHook,
   } = useTransactions();
 
-  // Calculate dashboard data directly from transactions
-  const balance = transactions.reduce((total, transaction) => {
+  // Date range filtering
+  const {
+    filteredTransactions,
+    dateRange,
+    setDateRange,
+    customRange,
+    setCustomRange,
+  } = useDateRangeFilter(transactions);
+
+  // Calculate dashboard data from filtered transactions
+  const balance = filteredTransactions.reduce((total, transaction) => {
     return transaction.type === "credit"
       ? total + transaction.amount
       : total - transaction.amount;
   }, 0);
 
-  const totalExpenses = transactions
+  const totalExpenses = filteredTransactions
     .filter((t) => t.type === "debit")
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalIncome = transactions
+  const totalIncome = filteredTransactions
     .filter((t) => t.type === "credit")
     .reduce((sum, t) => sum + t.amount, 0);
 
@@ -365,7 +380,14 @@ function App() {
           <section>
             {/*<h2 className="text-base font-medium mb-6">Dashboard</h2>*/}
 
-            <div className="flex gap-6 mb-6 overflow-x-auto hide-scrollbar pb-2 mt-15">
+            <DateRangeSelector
+              selectedRange={dateRange}
+              onRangeChange={setDateRange}
+              customRange={customRange}
+              onCustomRangeChange={setCustomRange}
+            />
+
+            <div className="flex gap-6 mb-6 overflow-x-auto hide-scrollbar pb-2">
               <div className="flex-shrink-0">
                 <SummaryCard
                   title="Balance"
@@ -427,10 +449,13 @@ function App() {
                 title="Balance Over Time"
                 className="lg:w-1/2 mb-6 lg:mb-0"
               >
-                <DashboardChart transactions={transactions} balance={balance} />
+                <DashboardChart
+                  transactions={filteredTransactions}
+                  balance={balance}
+                />
               </ChartCard>
               <ChartCard title="Expense breakdown" className="lg:w-1/2">
-                <ExpensePieChart transactions={transactions} />
+                <ExpensePieChart transactions={filteredTransactions} />
               </ChartCard>
             </div>
           </section>
