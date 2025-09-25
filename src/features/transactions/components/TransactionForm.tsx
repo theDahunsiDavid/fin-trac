@@ -141,7 +141,14 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         name="type"
         value={formData.type}
         onChange={handleChange}
-        className="w-full px-3 py-2 border border-gray-300 rounded"
+        className="w-full pl-3 pr-9 py-2 border border-gray-300 rounded"
+        style={{
+          backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6,9 12,15 18,9'></polyline></svg>")`,
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "right 12px center",
+          backgroundSize: "12px",
+          appearance: "none",
+        }}
       >
         <option value="debit">Debit</option>
         <option value="credit">Credit</option>
@@ -150,7 +157,14 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         name="category"
         value={formData.category}
         onChange={handleChange}
-        className="w-full px-3 py-2 border border-gray-300 rounded"
+        className="w-full pl-3 pr-9 py-2 border border-gray-300 rounded"
+        style={{
+          backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6,9 12,15 18,9'></polyline></svg>")`,
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "right 12px center",
+          backgroundSize: "12px",
+          appearance: "none",
+        }}
       >
         <option value="Food">Food</option>
         <option value="Transport">Transport</option>
