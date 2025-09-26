@@ -35,7 +35,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   return (
     <header className="flex items-center justify-between mb-12">
-      <h1 className="text-xl font-medium text-gray-620">FinTrac</h1>
+      <h1 className="text-xl font-light text-gray-620">fintrac</h1>
 
       <div className="flex items-center gap-3">
         <button

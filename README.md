@@ -289,7 +289,7 @@ Now that you have FinTrac running, here's how to use the application:
 
 ### Using Sync (If Configured)
 
-If you've set up CouchDB sync, click the cloud icon next to the Inflow/Spend buttons to reveal the sync controls modal:
+If you've set up CouchDB sync, click the gear icon next to the date-range selector to reveal the sync controls modal:
 
 1. **Manual sync**: Click the **"Sync Now"** button to sync your data with CouchDB
 2. **Monitor sync status**: Watch for sync indicators showing upload/download progress
