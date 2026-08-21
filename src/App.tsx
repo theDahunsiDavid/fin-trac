@@ -14,6 +14,9 @@ import { useTransactions } from "./features/transactions/hooks/useTransactions";
 import type { Transaction } from "./features/transactions/types";
 import { syncConfig } from "./services/sync/SyncConfig";
 import { useDateRangeFilter } from "./hooks/useDateRangeFilter";
+import { CouchDBClient } from "./services/sync/CouchDBClient";
+import { SyncService } from "./services/sync/SyncService";
+import { useCouchDBSync } from "./hooks/useCouchDBSync";
 
 /**
  * Debug Controls Component
@@ -101,8 +104,7 @@ function DebugControls() {
         return;
       }
 
-      // Import and test CouchDBClient directly
-      const { CouchDBClient } = await import("./services/sync/CouchDBClient");
+      // Test CouchDBClient directly
       const client = new CouchDBClient(config);
 
       const validation = await client.validateConnection();
@@ -123,8 +125,7 @@ function DebugControls() {
   const testSyncInit = async () => {
     setNetworkTest("Testing sync initialization...");
     try {
-      // Import SyncService directly
-      const { SyncService } = await import("./services/sync/SyncService");
+      // Use SyncService directly
       const config = syncConfig.getConfig();
 
       if (!config) {
@@ -166,8 +167,9 @@ function DebugControls() {
   const testSyncHookState = async () => {
     setNetworkTest("Testing sync hook state...");
     try {
-      // Import the hook
-      await import("./hooks/useCouchDBSync");
+      // The hook is available in the module scope; we can't call hooks here.
+      // Referencing it keeps the import live and verifies the module resolves.
+      void useCouchDBSync;
 
       // We can't call hooks here, but we can check the global state
       setNetworkTest(
