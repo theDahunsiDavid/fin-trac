@@ -16,13 +16,14 @@ export default defineConfig({
     target: "esnext",
     rollupOptions: {
       output: {
+        // Keep React, React-DOM, and the scheduler they depend on together to
+        // avoid a circular chunk dependency (which caused a blank-page error).
         manualChunks: (id) => {
-          if (id.includes("node_modules/react")) {
+          if (!id.includes("node_modules")) return;
+          if (/node_modules\/(react|react-dom|scheduler|react-is)\//.test(id)) {
             return "react-vendor";
           }
-          if (id.includes("node_modules")) {
-            return "vendor";
-          }
+          return "vendor";
         },
       },
     },
