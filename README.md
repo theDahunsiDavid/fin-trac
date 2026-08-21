@@ -363,15 +363,14 @@ If you've set up CouchDB sync, click the gear icon next to the date-range select
 ## Technology Stack
 
 ### Frontend
-- **React 18** - UI library with modern hooks and patterns
+- **React 19** - UI library with modern hooks and patterns
 - **Vite** - Fast build tool and development server
 - **TypeScript** - Static type checking for enhanced code quality
 - **Tailwind CSS** - Utility-first CSS framework for rapid styling
 
 ### Data & Storage
 - **Dexie.js** - Primary local database using IndexedDB with custom CouchDB sync
-- **CouchDB** - Remote database for multi-device synchronization
-- **PouchDB** - Legacy implementation (migrated from)
+- **CouchDB** - Remote database for multi-device synchronization (optional, via custom HTTP client)
 
 ### Visualization
 - **Recharts** - React chart library for interactive data visualization
@@ -387,7 +386,7 @@ If you've set up CouchDB sync, click the gear icon next to the date-range select
 - **Git** - Version control with conventional commits
 
 ### Deployment
-- Not yet deployed, but runs locally and can be deployed to platforms like Vercel or Netlify.
+- **Vercel** - Deployed as a static site; live at https://fintrac-live.vercel.app
 
 <br>
 
@@ -461,11 +460,8 @@ UI Components → Custom Hooks → Repository Layer → Dexie.js → IndexedDB
 
 ### Performance & Optimization
 - **Tree shaking** enabled via Vite
-- **Code splitting** by feature modules
-- **Lazy loading** for chart components
-- **Virtual DOM** optimization through React 18
+- **Code splitting** into framework/vendor/app chunks
 - **IndexedDB** for fast local data access
-- **Service Worker** registration for PWA functionality
 
 <br>
 
@@ -595,17 +591,21 @@ npm run build
 Generates optimized static files in the `dist/` directory.
 
 ### Deployment to Vercel
+
+The app is deployed to Vercel (free tier) as a static site and auto-deploys from the `main` branch. Live deployment: **https://fintrac-live.vercel.app**
+
 1. **Connect repository** to Vercel dashboard
-2. **Configure build settings**:
+2. **Configure build settings** (Vercel auto-detects Vite):
    - Build Command: `npm run build`
    - Output Directory: `dist`
-   - Node.js Version: 18.x
 3. **Deploy automatically** on main branch commits
 
 ### Environment Configuration
-- **No environment variables required** for core functionality
-- **Optional CouchDB URL** for sync features (configured in-app)
-- **PWA manifest** and service worker included
+- **No environment variables required** for core functionality — sync is disabled by default and the app runs fully offline/local on IndexedDB
+- Optionally add `VITE_SYNC_ENABLED=false` in Vercel project settings to make the sync-disabled default explicit
+- **To enable sync in production**: set `VITE_SYNC_ENABLED=true` plus `VITE_COUCHDB_URL`, `VITE_COUCHDB_DATABASE`, `VITE_COUCHDB_USERNAME`, `VITE_COUCHDB_PASSWORD` as Vercel environment variables, pointing at a public CouchDB/Cloudant instance — note CouchDB itself cannot run on Vercel
+- Local `.env` files are gitignored, so configure variables in the **Vercel dashboard** (Project → Settings → Environment Variables), not in the repo
+- **PWA manifest/service worker**: not yet included — offline persistence currently relies on IndexedDB
 
 ## Project Goals & AI Integration
 
