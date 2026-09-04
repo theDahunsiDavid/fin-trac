@@ -2,6 +2,7 @@ import React from "react";
 import { Modal } from "../../../components";
 import { TransactionForm } from "./TransactionForm";
 import type { Transaction } from "../types";
+import type { DebitFlightPayload } from "./FlyingBanknote";
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface TransactionModalProps {
   addTransaction: (
     transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt">,
   ) => Promise<void>;
+  onDebitCelebrated?: (payload: DebitFlightPayload) => void;
 }
 
 /**
@@ -49,6 +51,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   onClose,
   transactionType,
   addTransaction,
+  onDebitCelebrated,
 }) => {
   const modalTitle =
     transactionType === "credit" ? "Add Inflow" : "Add Spending";
@@ -63,6 +66,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         onComplete={handleFormComplete}
         initialType={transactionType}
         addTransaction={addTransaction}
+        onDebitCelebrated={onDebitCelebrated}
       />
     </Modal>
   );
