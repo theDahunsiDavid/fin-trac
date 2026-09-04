@@ -1,5 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { Transaction } from "../types";
+import {
+  celebrateCredit,
+  elementToConfettiOrigin,
+} from "../utils";
+import { formatCurrency } from "../../../services/utils/currencyUtils";
+import type { DebitFlightPayload } from "./FlyingBanknote";
 
 /**
  * Renders a form for adding new financial transactions to the FinTrac app.
@@ -30,12 +36,15 @@ interface TransactionFormProps {
   addTransaction: (
     transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt">,
   ) => Promise<void>;
+  /** Fired after a successful debit write; App renders the flight from here. */
+  onDebitCelebrated?: (payload: DebitFlightPayload) => void;
 }
 
 export const TransactionForm: React.FC<TransactionFormProps> = ({
   onComplete,
   initialType = "debit",
   addTransaction,
+  onDebitCelebrated,
 }) => {
   const [formData, setFormData] = useState({
     description: "",
@@ -43,6 +52,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     type: initialType,
     category: "Food",
   });
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
 
   /**
    * Handles form submission to add a new transaction.
@@ -67,6 +77,12 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Capture before the await: the modal (and button) unmounts on success,
+    // and formData is reset below. Celebration only happens for credits.
+    const origin = elementToConfettiOrigin(submitButtonRef.current);
+    const isCredit = formData.type === "credit";
+
     if (!formData.description || !formData.amount) return;
 
     await addTransaction({
@@ -77,6 +93,16 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       category: formData.category,
       date: new Date().toISOString(),
     });
+
+    // Celebrate after the transaction is persisted (throws skip this)
+    if (isCredit) {
+      celebrateCredit(origin);
+    } else {
+      onDebitCelebrated?.({
+        origin,
+        amount: formatCurrency(parseFloat(formData.amount), "NGN"),
+      });
+    }
 
     // Reset form
     setFormData({
@@ -177,6 +203,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       </select>
       <button
         type="submit"
+        ref={submitButtonRef}
         className="px-4 py-2 bg-emerald-600 text-white text-sm rounded hover:bg-emerald-700"
       >
         Add Transaction
