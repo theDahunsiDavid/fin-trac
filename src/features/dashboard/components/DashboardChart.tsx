@@ -17,6 +17,46 @@ interface DashboardChartProps {
 }
 
 /**
+ * Custom tooltip for the balance chart: the same label + balance rows as
+ * before, plus the transaction description as a smaller-font third row.
+ */
+interface BalanceTooltipPayloadItem {
+  value?: number | string;
+  payload?: {
+    description?: string;
+    transactionIndex?: number;
+  };
+}
+
+interface BalanceTooltipProps {
+  active?: boolean;
+  payload?: BalanceTooltipPayloadItem[];
+}
+
+const BalanceTooltip: React.FC<BalanceTooltipProps> = ({ active, payload }) => {
+  if (!active || !payload || payload.length === 0) return null;
+
+  const item = payload[0];
+  const description = item.payload?.description;
+  const index = item.payload?.transactionIndex ?? 0;
+  const amount = typeof item.value === "number" ? item.value : 0;
+
+  return (
+    <div className="rounded-md border border-gray-200 bg-white px-3 py-2 shadow-md">
+      <p className="text-sm font-medium text-gray-900">
+        Transaction {index + 1}
+      </p>
+      <p className="text-sm text-gray-700">
+        Balance: ₦{amount.toLocaleString()}
+      </p>
+      {description && (
+        <p className="max-w-[240px] text-xs text-gray-500">{description}</p>
+      )}
+    </div>
+  );
+};
+
+/**
  * Renders a responsive line chart displaying transaction amounts over time.
  *
  * This component is key to the app's data visualization capabilities, providing users with visual insights into their financial patterns. It uses Recharts for rendering, ensuring interactive and accessible charts that align with the app's emerald color scheme. Now receives transaction data as props to maintain single source of truth for data management.
@@ -55,6 +95,7 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
           dateTime: new Date(t.date).toLocaleString(),
           amount: runningBalance,
           transactionIndex: index,
+          description: t.description,
         };
       });
   }, [transactions]);
@@ -76,18 +117,13 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
         />
         {/* Add reference line at zero */}
         <ReferenceLine y={0} stroke="#374151" strokeDasharray="3 3" />
-        <Tooltip
-          labelFormatter={(value) => `Transaction ${parseInt(value) + 1}`}
-          formatter={(value: number) => [
-            `₦${value.toLocaleString()}`,
-            "Balance",
-          ]}
-        />
+        <Tooltip content={<BalanceTooltip />} />
         <Line
-          type="monotone"
+          type="linear"
           dataKey="amount"
           stroke={balance >= 0 ? "#10b981" : "#ef4444"}
           strokeWidth={2}
+          dot={{ fill: balance >= 0 ? "#10b981" : "#ef4444" }}
         />
       </LineChart>
     </ResponsiveContainer>
