@@ -2,28 +2,55 @@
 @import "tailwindcss";
 
 @theme {
-    --font-sans: "Inter", sans-serif;
-    --font-mono: "JetBrains Mono", monospace;
+  --font-sans: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 }
 
 /* Hide scrollbars globally */
 html,
 body {
-    -ms-overflow-style: none; /* Internet Explorer 10+ */
-    scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  scrollbar-width: none; /* Firefox */
 }
 
 html::-webkit-scrollbar,
 body::-webkit-scrollbar {
-    display: none; /* Safari and Chrome */
+  display: none; /* Safari and Chrome */
 }
 
 /* Hide scrollbars for horizontal scrolling containers */
 .hide-scrollbar {
-    -ms-overflow-style: none; /* Internet Explorer 10+ */
-    scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  scrollbar-width: none; /* Firefox */
 }
 
 .hide-scrollbar::-webkit-scrollbar {
-    display: none; /* Safari and Chrome */
+  display: none; /* Safari and Chrome */
+}
+
+/* Recharts focus handling: mouse/touch interaction focuses the chart
+   wrapper and shows the browser's default outline (a black box on Windows).
+   Suppress it for pointer interaction but keep a styled ring for keyboard
+   navigation (:focus-visible only triggers on keyboard traversal). */
+.recharts-wrapper:focus,
+.recharts-surface:focus {
+  outline: none;
+}
+
+.recharts-wrapper:focus-visible {
+  outline: 2px solid #34d399;
+  outline-offset: 2px;
+}
+
+/* Faint banknote-inspired backdrop: fine diagonal hatching in a warm
+   aged-ink tone over the paper-green background. A single repeating
+   linear-gradient (hairline lines every ~9px) is all it takes - no asset
+   files, crisp at any zoom. The rgba alpha is the "loudness" dial. */
+.banknote-paper {
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(138, 107, 61, 0.14) 0 1px,
+    transparent 1px 2px
+  );
+  background-size: auto;
 }
