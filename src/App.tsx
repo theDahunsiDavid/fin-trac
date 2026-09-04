@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { TransactionModal } from "./features/transactions";
+import { FlyingBanknote } from "./features/transactions";
+import type { DebitFlightPayload } from "./features/transactions";
 import { DashboardChart, ExpensePieChart } from "./features/dashboard";
 import {
   Header,
@@ -17,6 +19,8 @@ import { useDateRangeFilter } from "./hooks/useDateRangeFilter";
 import { CouchDBClient } from "./services/sync/CouchDBClient";
 import { SyncService } from "./services/sync/SyncService";
 import { useCouchDBSync } from "./hooks/useCouchDBSync";
+import { Toaster } from "sonner";
+import { scheduleDebitToast } from "./features/transactions/utils";
 
 /**
  * Debug Controls Component
@@ -272,6 +276,11 @@ function App() {
   const [transactionType, setTransactionType] = useState<"credit" | "debit">(
     "debit",
   );
+  // "Money flying away" celebration for successful debits; rendered at the root
+  // because the transaction modal unmounts on success.
+  const [debitFlight, setDebitFlight] = useState<DebitFlightPayload | null>(
+    null,
+  );
 
   // Debug logging for environment variables and sync config
   useEffect(() => {
@@ -364,14 +373,22 @@ function App() {
   // Show loading state while transactions are being fetched
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4 flex items-center justify-center">
+      <div className="min-h-screen bg-[#fbfdfb] banknote-paper p-4 flex items-center justify-center">
         <div className="text-gray-600">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-[#fbfdfb] banknote-paper p-4">
+      <Toaster position="top-center" richColors />
+      {debitFlight && (
+        <FlyingBanknote
+          origin={debitFlight.origin}
+          amount={debitFlight.amount}
+          onComplete={() => setDebitFlight(null)}
+        />
+      )}
       <div className="max-w-4xl mx-auto">
         <Header
           onInflowClick={handleInflowClick}
@@ -461,7 +478,7 @@ function App() {
                   balance={balance}
                 />
               </ChartCard>
-              <ChartCard title="Expense breakdown" className="lg:w-1/2">
+              <ChartCard title="Expense Breakdown" className="lg:w-1/2">
                 <ExpensePieChart transactions={filteredTransactions} />
               </ChartCard>
             </div>
@@ -473,6 +490,13 @@ function App() {
           onClose={handleModalClose}
           transactionType={transactionType}
           addTransaction={addTransaction}
+          onDebitCelebrated={(payload) => {
+            setDebitFlight(payload);
+            // Mirror the credit stagger: flight plays first, the concern
+            // toast lands a beat later (scheduled from here so it also
+            // works when reduced-motion skips the visual entirely).
+            scheduleDebitToast();
+          }}
         />
 
         {/* Sync Modal */}
