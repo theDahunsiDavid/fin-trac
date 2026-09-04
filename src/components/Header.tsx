@@ -40,9 +40,9 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center gap-3">
         <button
           onClick={onInflowClick}
-          className="px-4 py-2 bg-emerald-600 text-white text-sm rounded hover:bg-emerald-700 transition-colors"
+          className="px-4 py-2 bg-[#163300] text-white text-sm rounded hover:bg-[#1f4400] transition-colors"
         >
-          We're Rich!
+          We're <em className="text-[#9fe870]">Rich!</em>
         </button>
         <button
           onClick={onSpendClick}
