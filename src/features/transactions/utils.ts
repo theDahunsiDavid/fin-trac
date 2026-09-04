@@ -1,0 +1,149 @@
+import confetti from "canvas-confetti";
+import { toast } from "sonner";
+
+/**
+ * Feature-level utilities for the transactions module.
+ */
+
+/** Chart palette colors used for the credit celebration burst. */
+export const CREDIT_CONFETTI_COLORS = [
+  "#34d399", // emerald-400
+  "#60a5fa", // blue-400
+  "#fbbf24", // amber-400
+  "#fb7185", // rose-400
+];
+
+/** Viewport-relative confetti origin (fractions of window width/height, 0-1). */
+export interface ConfettiOrigin {
+  x: number;
+  y: number;
+}
+
+/**
+ * Converts a DOM element's screen position to a viewport-relative confetti
+ * origin (`canvas-confetti` expects fractions, not pixels). Falls back to the
+ * viewport center when the element is not mounted.
+ */
+export function elementToConfettiOrigin(
+  el: HTMLElement | null,
+): ConfettiOrigin {
+  if (!el) return { x: 0.5, y: 0.5 };
+
+  const rect = el.getBoundingClientRect();
+  return {
+    x: (rect.left + rect.width / 2) / window.innerWidth,
+    y: (rect.top + rect.height / 2) / window.innerHeight,
+  };
+}
+
+/**
+ * Praise messages cycled through on each successful credit transaction.
+ */
+export const CREDIT_TOAST_MESSAGES = [
+  "Na man you be!",
+  "You bad no worry! 😎",
+  "You na Odogwu normally! 🎖️",
+];
+
+let creditToastIndex = 0;
+
+/**
+ * Shows the next credit praise message as a toast, cycling through the list
+ * on each successful credit transaction.
+ */
+export function showCreditToast(): void {
+  const message =
+    CREDIT_TOAST_MESSAGES[creditToastIndex % CREDIT_TOAST_MESSAGES.length];
+  creditToastIndex += 1;
+  toast.success(message);
+}
+
+/** Delay before the praise toast appears after the confetti burst, in ms. */
+export const CREDIT_TOAST_DELAY_MS = 1000;
+
+/** Total particle count across all layers of the celebration burst. */
+const REALISTIC_COUNT = 200;
+
+/**
+ * Fires a one-shot multi-layer confetti burst from the given origin,
+ * based on the canvas-confetti "Realistic Look" demo, then shows the praise
+ * toast a beat later so the message doesn't compete with the burst.
+ *
+ * Five synchronous layers (tight fast core -> wide slow scatter) stack into a
+ * single natural-looking explosion. The try/catch makes this a no-op in
+ * canvas-less environments (e.g. jsdom). The toast is delayed only when the
+ * confetti actually plays: under reduced motion the toast fires immediately
+ * (there's no visual competition, so a delay would just read as lag).
+ */
+export function celebrateCredit(origin: ConfettiOrigin): void {
+  const reducedMotion = window.matchMedia?.(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
+
+  if (reducedMotion) {
+    showCreditToast();
+    return;
+  }
+
+  try {
+    const defaults = {
+      origin,
+      colors: CREDIT_CONFETTI_COLORS,
+      disableForReducedMotion: true,
+    };
+
+    const fire = (particleRatio: number, opts: confetti.Options) => {
+      confetti({
+        ...defaults,
+        ...opts,
+        particleCount: Math.floor(REALISTIC_COUNT * particleRatio),
+      });
+    };
+
+    fire(0.25, { spread: 26, startVelocity: 55 });
+    fire(0.2, { spread: 60 });
+    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+    fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+    fire(0.1, { spread: 120, startVelocity: 45 });
+
+    // Fire-and-forget: self-containing timer, safe past the modal unmount.
+    setTimeout(showCreditToast, CREDIT_TOAST_DELAY_MS);
+  } catch {
+    // no-op: no canvas support (e.g. jsdom)
+  }
+}
+
+/**
+ * Mocking "concern" messages cycled through on each successful debit
+ * transaction, mirroring the credit praise trio.
+ */
+export const DEBIT_TOAST_MESSAGES = [
+  "Potential poverty noted. ✍️",
+  "I go dey update you on your failure. 😐",
+  "Another capital dead! 🪦",
+];
+
+let debitToastIndex = 0;
+
+/**
+ * Shows the next debit concern message as a toast, cycling through the list
+ * on each successful debit transaction. `success` styling keeps the visual
+ * language identical to the credit toasts (checkmark, green tint).
+ */
+export function showDebitToast(): void {
+  const message =
+    DEBIT_TOAST_MESSAGES[debitToastIndex % DEBIT_TOAST_MESSAGES.length];
+  debitToastIndex += 1;
+  toast.success(message);
+}
+
+/** Delay before the debit toast appears after the flight takes off, in ms. */
+export const DEBIT_TOAST_DELAY_MS = 1000;
+
+/**
+ * Schedules the debit toast so it lands a beat after the flight starts,
+ * mirroring the credit stagger (visual first, message a second later).
+ */
+export function scheduleDebitToast(): void {
+  window.setTimeout(showDebitToast, DEBIT_TOAST_DELAY_MS);
+}
