@@ -42,13 +42,13 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={onInflowClick}
           className="px-4 py-2 bg-emerald-600 text-white text-sm rounded hover:bg-emerald-700 transition-colors"
         >
-          Inflow
+          We're Rich!
         </button>
         <button
           onClick={onSpendClick}
           className="px-4 py-2 bg-emerald-50 text-gray-800 text-sm border border-gray-300 rounded hover:bg-emerald-100 transition-colors"
         >
-          Spend
+          Poverty
         </button>
       </div>
     </header>
