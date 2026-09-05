@@ -31,7 +31,7 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
       <select
         value={selectedRange}
         onChange={handleRangeChange}
-        className="pl-3 pr-9 py-2 border border-gray-300 rounded text-sm"
+        className="pl-3 pr-9 py-2 bg-[#fbfdfb] border border-gray-300 rounded text-sm"
         style={{
           backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6,9 12,15 18,9'></polyline></svg>")`,
           backgroundRepeat: "no-repeat",
@@ -53,14 +53,14 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
             type="date"
             value={customRange.from}
             onChange={handleCustomDateChange("from")}
-            className="px-3 py-2 border border-gray-300 rounded text-sm"
+            className="px-3 py-2 bg-[#fbfdfb] border border-gray-300 rounded text-sm"
           />
           <span className="text-gray-500">to</span>
           <input
             type="date"
             value={customRange.to}
             onChange={handleCustomDateChange("to")}
-            className="px-3 py-2 border border-gray-300 rounded text-sm"
+            className="px-3 py-2 bg-[#fbfdfb] border border-gray-300 rounded text-sm"
           />
         </>
       )}
