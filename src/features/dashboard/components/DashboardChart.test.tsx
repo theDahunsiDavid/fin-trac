@@ -243,6 +243,26 @@ describe('balance chart panning', () => {
     expect(viewport.scrollLeft).toBe(7 * PITCH - clientWidth);
   });
 
+  it('stretches the plot canvas to the viewport width when data is sparse', () => {
+    points = 2; // plotWidth(2) = 144px, well under the 360px viewport
+    render(<DashboardChart transactions={nTransactions(2)} balance={200} />);
+
+    // The canvas fills the whole card even with two points, so the grid
+    // lines and X-axis baseline span the full area instead of cutting off
+    // midway; there is nothing to scroll either.
+    const plot = screen.getByTestId('plot-chart');
+    expect(Number(plot.getAttribute('data-width'))).toBe(clientWidth);
+    expect(screen.getByTestId('chart-scroll').scrollLeft).toBe(0);
+  });
+
+  it('keeps the data-sized pitch once the history outgrows the viewport', () => {
+    points = 10; // plotWidth(10) = 720px > 360px viewport: data wins
+    render(<DashboardChart transactions={nTransactions(10)} balance={1000} />);
+
+    expect(Number(screen.getByTestId('plot-chart').getAttribute('data-width'))).toBe(10 * PITCH);
+    expect(screen.getByTestId('chart-scroll').scrollLeft).toBe(10 * PITCH - clientWidth);
+  });
+
   it('stays pinned to the newest points when data grows while at the edge', () => {
     const { rerender } = render(
       <DashboardChart transactions={nTransactions(7)} balance={700} />,
