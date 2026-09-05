@@ -60,7 +60,10 @@ export function showCreditToast(): void {
   const message =
     CREDIT_TOAST_MESSAGES[creditToastIndex % CREDIT_TOAST_MESSAGES.length];
   creditToastIndex += 1;
-  toast.success(TOAST_TITLE, { description: message });
+  // `icon: null` hides sonner's default per-variant icon (the success
+  // checkmark); `false` would NOT work — sonner falls back to the default
+  // asset for any falsy-but-non-null value.
+  toast.success(TOAST_TITLE, { description: message, icon: null });
 }
 
 /**
@@ -139,13 +142,13 @@ let debitToastIndex = 0;
 /**
  * Shows the next debit concern message as a toast, cycling through the list
  * on each successful debit transaction. `success` styling keeps the visual
- * language identical to the credit toasts (checkmark, green tint).
+ * language identical to the credit toasts (green tint, no icon).
  */
 export function showDebitToast(): void {
   const message =
     DEBIT_TOAST_MESSAGES[debitToastIndex % DEBIT_TOAST_MESSAGES.length];
   debitToastIndex += 1;
-  toast.success(TOAST_TITLE, { description: message });
+  toast.success(TOAST_TITLE, { description: message, icon: null });
 }
 
 /** Delay before the debit toast appears after the flight ends, in ms. */
