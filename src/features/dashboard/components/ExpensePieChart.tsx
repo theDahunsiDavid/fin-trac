@@ -57,12 +57,33 @@ export const ExpensePieChart: React.FC<ExpensePieChartProps> = ({
   return (
     <ResponsiveContainer width="100%" height={300}>
       <PieChart>
-        <Pie data={data} cx="50%" cy="50%" outerRadius={120} dataKey="value">
+        <Pie
+          data={data}
+          cx="50%"
+          cy="50%"
+          innerRadius={70}
+          outerRadius={120}
+          dataKey="value"
+        >
           {data.map((_, index) => (
             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
           ))}
         </Pie>
         <Tooltip
+          // Slim the default white box: the stock styling (10px padding,
+          // square corners) reads as a thick square over the tapped slice.
+          contentStyle={{
+            backgroundColor: "white",
+            border: "1px solid #e5e7eb",
+            borderRadius: 8,
+            padding: "4px 8px",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+          }}
+          itemStyle={{
+            padding: 0,
+            color: "#111827",
+            fontSize: 12,
+          }}
           formatter={(value: number) =>
             new Intl.NumberFormat("en-NG", {
               style: "currency",
