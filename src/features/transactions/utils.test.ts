@@ -10,6 +10,7 @@ import {
   DEBIT_TOAST_MESSAGES,
   scheduleDebitToast,
   showDebitToast,
+  TOAST_TITLE,
 } from './utils';
 
 // Keep the DOM-heavy deps out of this logic test.
@@ -36,15 +37,20 @@ describe('showCreditToast', () => {
     vi.useRealTimers();
   });
 
+  // Extract the per-call description (the cycling message) from the mocked
+  // `toast.success(title, { description })` calls.
+  const descriptions = () =>
+    vi
+      .mocked(toast.success)
+      .mock.calls.map(([, options]) => options?.description as string);
+
   it('shows each message in order and wraps around', () => {
     const total = CREDIT_TOAST_MESSAGES.length + 1;
     for (let i = 0; i < total; i++) {
       showCreditToast();
     }
 
-    const messages = vi
-      .mocked(toast.success)
-      .mock.calls.map(([message]) => message);
+    const messages = descriptions();
 
     expect(messages.slice(0, CREDIT_TOAST_MESSAGES.length)).toEqual(
       CREDIT_TOAST_MESSAGES,
@@ -53,6 +59,10 @@ describe('showCreditToast', () => {
     expect(messages[CREDIT_TOAST_MESSAGES.length]).toBe(
       CREDIT_TOAST_MESSAGES[0],
     );
+    // Every toast is branded with the fintrac title.
+    for (const [title] of vi.mocked(toast.success).mock.calls) {
+      expect(title).toBe(TOAST_TITLE);
+    }
   });
 
   it('fires the confetti immediately and delays the toast by one beat', () => {
@@ -71,8 +81,8 @@ describe('showCreditToast', () => {
     vi.advanceTimersByTime(1);
     expect(vi.mocked(toast.success)).toHaveBeenCalledTimes(1);
 
-    const message = vi.mocked(toast.success).mock.calls[0][0];
-    expect(CREDIT_TOAST_MESSAGES).toContain(message);
+    const [, options] = vi.mocked(toast.success).mock.calls[0];
+    expect(CREDIT_TOAST_MESSAGES).toContain(options?.description);
   });
 });
 
@@ -93,7 +103,7 @@ describe('showDebitToast', () => {
 
     const messages = vi
       .mocked(toast.success)
-      .mock.calls.map(([message]) => message);
+      .mock.calls.map(([, options]) => options?.description as string);
 
     expect(messages.slice(0, DEBIT_TOAST_MESSAGES.length)).toEqual(
       DEBIT_TOAST_MESSAGES,
@@ -102,6 +112,10 @@ describe('showDebitToast', () => {
     expect(messages[DEBIT_TOAST_MESSAGES.length]).toBe(
       DEBIT_TOAST_MESSAGES[0],
     );
+    // Every toast is branded with the fintrac title.
+    for (const [title] of vi.mocked(toast.success).mock.calls) {
+      expect(title).toBe(TOAST_TITLE);
+    }
   });
 
   it('delays the toast by one beat so it staggers behind the flight', () => {
@@ -118,7 +132,7 @@ describe('showDebitToast', () => {
     vi.advanceTimersByTime(1);
     expect(vi.mocked(toast.success)).toHaveBeenCalledTimes(1);
 
-    const message = vi.mocked(toast.success).mock.calls[0][0];
-    expect(DEBIT_TOAST_MESSAGES).toContain(message);
+    const [, options] = vi.mocked(toast.success).mock.calls[0];
+    expect(DEBIT_TOAST_MESSAGES).toContain(options?.description);
   });
 });
