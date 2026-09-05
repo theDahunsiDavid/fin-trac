@@ -37,6 +37,11 @@ export function elementToConfettiOrigin(
 }
 
 /**
+ * Brand title shown on every toast; the message rides as the description.
+ */
+export const TOAST_TITLE = "fintrac";
+
+/**
  * Praise messages cycled through on each successful credit transaction.
  */
 export const CREDIT_TOAST_MESSAGES = [
@@ -55,11 +60,15 @@ export function showCreditToast(): void {
   const message =
     CREDIT_TOAST_MESSAGES[creditToastIndex % CREDIT_TOAST_MESSAGES.length];
   creditToastIndex += 1;
-  toast.success(message);
+  toast.success(TOAST_TITLE, { description: message });
 }
 
-/** Delay before the praise toast appears after the confetti burst, in ms. */
-export const CREDIT_TOAST_DELAY_MS = 1000;
+/**
+ * Delay before the praise toast appears after the confetti burst, in ms.
+ * Matches the burst's own wall-clock run (~200 rAF ticks ≈ 3.3s at 60Hz) so
+ * the toast lands as the animation ends, not while it's mid-climax.
+ */
+export const CREDIT_TOAST_DELAY_MS = 3300;
 
 /** Total particle count across all layers of the celebration burst. */
 const REALISTIC_COUNT = 200;
@@ -67,7 +76,7 @@ const REALISTIC_COUNT = 200;
 /**
  * Fires a one-shot multi-layer confetti burst from the given origin,
  * based on the canvas-confetti "Realistic Look" demo, then shows the praise
- * toast a beat later so the message doesn't compete with the burst.
+ * toast as the burst winds down so the message doesn't compete with it.
  *
  * Five synchronous layers (tight fast core -> wide slow scatter) stack into a
  * single natural-looking explosion. The try/catch makes this a no-op in
@@ -107,6 +116,8 @@ export function celebrateCredit(origin: ConfettiOrigin): void {
     fire(0.1, { spread: 120, startVelocity: 45 });
 
     // Fire-and-forget: self-containing timer, safe past the modal unmount.
+    // The toast lands as the burst winds down, so attention jumps from the
+    // confetti to the message instead of sharing it mid-flight.
     setTimeout(showCreditToast, CREDIT_TOAST_DELAY_MS);
   } catch {
     // no-op: no canvas support (e.g. jsdom)
@@ -119,8 +130,8 @@ export function celebrateCredit(origin: ConfettiOrigin): void {
  */
 export const DEBIT_TOAST_MESSAGES = [
   "Potential poverty noted. ✍️",
-  "I go dey update you on your failure. 😐",
-  "Another capital dead! 🪦",
+  "Spend on! I go dey update you on your failure. 😐",
+  "Another capital buried. 🥀 🪦",
 ];
 
 let debitToastIndex = 0;
@@ -134,15 +145,15 @@ export function showDebitToast(): void {
   const message =
     DEBIT_TOAST_MESSAGES[debitToastIndex % DEBIT_TOAST_MESSAGES.length];
   debitToastIndex += 1;
-  toast.success(message);
+  toast.success(TOAST_TITLE, { description: message });
 }
 
-/** Delay before the debit toast appears after the flight takes off, in ms. */
-export const DEBIT_TOAST_DELAY_MS = 1000;
+/** Delay before the debit toast appears after the flight ends, in ms. */
+export const DEBIT_TOAST_DELAY_MS = 3300;
 
 /**
- * Schedules the debit toast so it lands a beat after the flight starts,
- * mirroring the credit stagger (visual first, message a second later).
+ * Schedules the debit toast so it lands as the flight ends (~3.3s), not
+ * while the animation is mid-climax where it would compete for attention.
  */
 export function scheduleDebitToast(): void {
   window.setTimeout(showDebitToast, DEBIT_TOAST_DELAY_MS);
