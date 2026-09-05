@@ -59,9 +59,10 @@ describe('showCreditToast', () => {
     expect(messages[CREDIT_TOAST_MESSAGES.length]).toBe(
       CREDIT_TOAST_MESSAGES[0],
     );
-    // Every toast is branded with the fintrac title.
-    for (const [title] of vi.mocked(toast.success).mock.calls) {
+    // Every toast is branded with the fintrac title and carries no icon.
+    for (const [title, options] of vi.mocked(toast.success).mock.calls) {
       expect(title).toBe(TOAST_TITLE);
+      expect(options?.icon).toBeNull();
     }
   });
 
@@ -112,9 +113,10 @@ describe('showDebitToast', () => {
     expect(messages[DEBIT_TOAST_MESSAGES.length]).toBe(
       DEBIT_TOAST_MESSAGES[0],
     );
-    // Every toast is branded with the fintrac title.
-    for (const [title] of vi.mocked(toast.success).mock.calls) {
+    // Every toast is branded with the fintrac title and carries no icon.
+    for (const [title, options] of vi.mocked(toast.success).mock.calls) {
       expect(title).toBe(TOAST_TITLE);
+      expect(options?.icon).toBeNull();
     }
   });
 
