@@ -42,9 +42,62 @@ body::-webkit-scrollbar {
   outline-offset: 2px;
 }
 
+/* Pie sectors are tabindex="-1" but still take focus on tap in
+   Safari/Firefox, which paints the browser's default chunky ring around the
+   tapped slice (on iOS it shows as a thick dark square-ish highlight).
+   Replace it with a hairline that follows the slice's own arc boundary -
+   emerald-600, the app's active-state color; stroke beats the inline SVG
+   presentation attribute without !important. The thicker keyboard ring stays
+   on the chart wrapper above. */
+.recharts-sector:focus,
+.recharts-pie-sector:focus,
+.recharts-sector:focus-visible,
+.recharts-pie-sector:focus-visible {
+  outline: none;
+  stroke: #059669;
+  stroke-width: 1px;
+}
+
+.recharts-sector,
+.recharts-pie-sector {
+  -webkit-tap-highlight-color: transparent; /* iOS/Chrome tap flash */
+}
+
+/* Toast text: the title keeps sonner's default --success-text green (it
+   complements the pale-green background), but the description inherits that
+   same green too, which reads muddy — so pin only the description to a
+   near-black gray. Weight stays as sonner ships it (400).
+
+   Note: sonner injects its stylesheet at runtime, so equal-specificity rules
+   in our CSS LOSE; this selector adds [data-styled='true'] to beat sonner's
+   0,4,0 `[data-rich-colors=true][data-sonner-toast][data-styled=true] ...`. */
+[data-sonner-toast][data-rich-colors='true'][data-styled='true'][data-type='success'] [data-description] {
+  color: #111827; /* gray-900 */
+}
+
+/* Balance chart history panning: the plot is a fixed-pitch strip inside a
+   horizontally scrollable viewport, so the navigation gesture (two-finger
+   trackpad drag, touch swipe, shift+wheel) is the browser's own overflow
+   scrolling. No transition or re-render happens while moving - the scroll
+   offset changes without the chart data changing - which is what makes the
+   line traceable mid-drag. `.hide-scrollbar` (defined globally) keeps the
+   strip discreet, like the rest of the app's scroll areas.
+
+   touch-action: pan-x pan-y - the browser owns both axes, NOT a restricted
+   pan-x. A gesture's effective action is the intersection across the hit
+   path, so pan-x alone would forbid vertical pans starting on the chart and
+   block page scrolling - the reported mobile bug. pan-x pan-y routes
+   horizontal pans to the chart and vertical pans to the page, while still
+   excluding pinch/double-tap zoom on the chart itself. */
+.chart-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  touch-action: pan-x pan-y;
+}
+
 /* Faint banknote-inspired backdrop: fine diagonal hatching in a warm
    aged-ink tone over the paper-green background. A single repeating
-   linear-gradient (hairline lines every ~9px) is all it takes - no asset
+   linear-gradient (hairline line / 2px gap) is all it takes - no asset
    files, crisp at any zoom. The rgba alpha is the "loudness" dial. */
 .banknote-paper {
   background-image: repeating-linear-gradient(
