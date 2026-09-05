@@ -297,6 +297,33 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
     };
   }, []);
 
+  // Stretch the plot canvas to at least the viewport width: history panning
+  // sizes the SVG to the data (PITCH per point), which leaves sparse
+  // datasets - or none at all - with half the card blank: no grid lines, and
+  // the X-axis baseline cut off midway. Grid and axes are drawn across the
+  // full canvas, so filling the card keeps the empty chart intact. Measured
+  // in a layout effect (pre-paint, so no width flash) and kept in sync by a
+  // ResizeObserver for window/card size changes.
+  const [viewWidth, setViewWidth] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const update = () => setViewWidth(el.clientWidth);
+    update();
+    if (typeof ResizeObserver === "undefined") {
+      return; // jsdom/test environments have no layout to observe
+    }
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // The canvas is data-sized (PITCH per point) but never narrower than the
+  // viewport: a sparse history (or none yet) still shows a full card of grid
+  // lines and the X-axis baseline instead of a half-blank chart.
+  const plotWidthPx = Math.max(plotWidth(data.length), viewWidth);
+
   return (
     <div className="flex items-stretch">
       {/* Fixed axis column: stays put while the plot pans underneath, so the
@@ -335,7 +362,7 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
         aria-label="Balance over time. Two-finger drag or swipe to explore earlier points."
       >
         <LineChart
-          width={plotWidth(data.length)}
+          width={plotWidthPx}
           height={PLOT_HEIGHT}
           data={data}
           className="plot-chart"
