@@ -46,7 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
         <button
           onClick={onSpendClick}
-          className="px-4 py-2 bg-emerald-50 text-gray-800 text-sm border border-gray-300 rounded hover:bg-emerald-100 transition-colors"
+          className="px-4 py-2 bg-[#fbfdfb] text-gray-800 text-sm border border-gray-300 rounded hover:bg-[#f3f7f1] transition-colors"
         >
           Poverty
         </button>
