@@ -492,9 +492,9 @@ function App() {
           addTransaction={addTransaction}
           onDebitCelebrated={(payload) => {
             setDebitFlight(payload);
-            // Mirror the credit stagger: flight plays first, the concern
-            // toast lands a beat later (scheduled from here so it also
-            // works when reduced-motion skips the visual entirely).
+            // Mirror the credit timing: the flight plays to its end, then the
+            // concern toast lands (scheduled from here so it also fires when
+            // reduced-motion skips the visual entirely).
             scheduleDebitToast();
           }}
         />
