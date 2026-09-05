@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+import { Analytics } from "@vercel/analytics/react";
 import "./index.css";
 import App from "./App.tsx";
 
@@ -25,4 +26,9 @@ if (typeof window !== "undefined") {
   console.log("✅ Global sync event listeners initialized");
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <>
+    <Analytics />
+    <App />
+  </>,
+);
